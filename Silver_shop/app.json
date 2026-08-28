@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Silver_shop",
+    "slug": "Silver_shop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/bg-logo-silver.png",
+    "scheme": "silvershop",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "icon": "./assets/images/logo-silver.png"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/logo-silver.png",
+        "backgroundImage": "./assets/images/logo-silver.png",
+        "monochromeImage": "./assets/images/logo-silver.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.amirgrev.Silver_shop"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/logo-silver.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#208AEF",
+          "android": {
+            "image": "./assets/images/logo-silver.png",
+            "imageWidth": 76
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "42becf1b-2074-46ce-93b1-953b3daa245f"
+      }
+    },
+    "owner": "amirgrev"
+  }
+}

@@ -1,0 +1,25 @@
+node_modules/
+.expo/
+dist/
+.env
+.env.*
+!.env.example
+
+
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS
+.DS_Store

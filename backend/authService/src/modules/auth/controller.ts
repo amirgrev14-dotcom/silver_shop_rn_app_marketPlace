@@ -26,6 +26,9 @@ register = async (
 console.log("REGISTER")
   const data = validate(registerSchema, request.body)
   // result because (user, token) is returned from service
+
+
+  console.log("AUTH SERVICe", this.authService)
   const result = await this.authService.register(data)
 
   this.setRefreshToken(reply, result.refreshToken)

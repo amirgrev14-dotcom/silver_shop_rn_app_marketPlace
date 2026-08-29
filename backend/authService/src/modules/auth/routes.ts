@@ -6,7 +6,6 @@ import { createAuthModule } from "./index.js";
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   const { authController } = createAuthModule(fastify);
 
-  console.log("ROUTES")
   fastify.post("/register", authController.register);
   fastify.post("/login", authController.login);
   fastify.post("/refresh", authController.refresh);

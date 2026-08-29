@@ -1,7 +1,7 @@
 import fastify from "fastify";
 import cors from "@fastify/cors"
 import "dotenv/config";
-import {errorMiddleware} from "./middleware/error.middleware.js";
+import { errorMiddleware } from "./middleware/error.middleware.js";
 // routes
 import { authRoutes } from "./modules/auth/routes.js";
 // plugins
@@ -15,8 +15,6 @@ import fastifyCookie from "@fastify/cookie";
 const app = fastify({
   logger: true
 })
-
-console.log("SERVER AUTH ?")
 
 app.register(cors, {
   // origin: "http://localhost:8081",

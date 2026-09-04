@@ -8,6 +8,10 @@ import { authRoutes } from "./modules/auth/routes.js";
 import jwtPlugin from "./plugins/jwt.js";
 import fastifyCookie from "@fastify/cookie";
 
+
+// cron
+import job from "./lib/cron.js";
+
 /**
  * @type {import('fastify').FastifyInstance} Instance of Fastify
 */
@@ -16,6 +20,8 @@ const app = fastify({
   logger: true
 })
 
+
+job.start()
 app.register(cors, {
   // origin: "http://localhost:8081",
   origin: true,
@@ -42,7 +48,10 @@ app.get('/health',  (request, reply) => {
 
 const start = async () => {
   try {
-    await app.listen({port: 3002, host: "0.0.0.0"})
+    const port = Number(process.env.PORT ?? 3000)
+    const host = process.env.URL_API_RENDER ?? "0.0.0.0"
+
+    await app.listen({ port, host })
   } catch (error) {
     app.log.error(error)
     process.exit(1)

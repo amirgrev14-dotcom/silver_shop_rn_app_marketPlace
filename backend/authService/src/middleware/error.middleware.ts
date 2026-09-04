@@ -7,6 +7,7 @@ export const errorMiddleware = async (
   reply: FastifyReply
 ) => {
   
+  console.error("Error:", error);
   if (error instanceof AppError) {
     return reply.status(error.status).send({
       success: false,

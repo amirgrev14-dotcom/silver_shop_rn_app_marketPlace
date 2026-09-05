@@ -58,7 +58,7 @@ export class EmailVerifyService {
 
       const response = await this.resendEmailVerificationDTO.sendVerificationEmail(
         {
-          nameCompany: "CompanyRJ",
+          nameCompany: "Silver_MarketPlace",
           email: email,
           html: `<p>Please verify your email by clicking the link below:</p><a href="${verificationLink}">Verify Email</a>`,
           subject: "Email Verification",

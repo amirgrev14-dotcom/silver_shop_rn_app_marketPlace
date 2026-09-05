@@ -25,6 +25,8 @@ export class AuthService {
 
   async register(data: RegisterDto) {
 
+    console.log("BUYER_SELLER RIEL DATA", data)
+
     const existingUser = await prisma.user.findUnique({
       where: {email: data.email},
     });
@@ -35,13 +37,17 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
+    
     const user = await prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
-        password: hashedPassword
+        password: hashedPassword,
+        emailVerifiedAt: null,
+        role: "BUYER_SELLER",
       }
     });
+    console.log("ROLE BUYER_SELLER", user)
 
     // Access and refresh tokens
     const tokens = this.createTokens({
@@ -98,6 +104,7 @@ export class AuthService {
       select: {
         id: true,
         email: true,
+        role: true,
         name: true,
         createdAt: true,
         updatedAt: true
@@ -105,7 +112,7 @@ export class AuthService {
     })
 
     if(!user) {
-      throw new AppError(HttpStatus.NOT_FOUND, "User not found")
+      throw new AppError(HttpStatus.UNAUTHORIZED, "Invalid credentials email or password")
     }
 
     return user
@@ -127,5 +134,6 @@ async refresh(refreshToken: string) {
     accessToken,
   }
 }
+
 }
 

@@ -27,4 +27,7 @@ export class TokenService {
   verifyRefreshToken(token: string) {
     return this.fastify.jwt.verify<JwtPayload>(token);
   }
+
+
+
 }

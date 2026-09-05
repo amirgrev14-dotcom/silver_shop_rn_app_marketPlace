@@ -22,13 +22,11 @@ export class AuthController {
 
 register = async (
   request: FastifyRequest<{Body: RegisterDto;}>, reply: FastifyReply) => {
-    
-console.log("REGISTER")
+
+
+  console.log("REGISTER DATA", request.body)
   const data = validate(registerSchema, request.body)
   // result because (user, token) is returned from service
-
-
-  console.log("AUTH SERVICe", this.authService)
   const result = await this.authService.register(data)
 
   this.setRefreshToken(reply, result.refreshToken)
@@ -78,6 +76,12 @@ refresh = async (request: FastifyRequest, reply: FastifyReply) => {
   reply.send({
     success: true,
     data: result,
+  })
+}
+
+logout = async (request: FastifyRequest, reply: FastifyReply) => {
+  reply.clearCookie("refreshToken", {
+    path: "/",
   })
 }
 }

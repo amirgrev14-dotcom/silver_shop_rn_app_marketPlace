@@ -99,8 +99,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     const refreshToken = await tokenStorage.getRefresh();
 
     if (accessToken && refreshToken) {
-      const meResponse = await getMe();
-      get().login(accessToken, refreshToken, meResponse.user);
+      try {
+        const meResponse = await getMe();
+        get().login(accessToken, refreshToken, meResponse.user);
+      } catch {
+        // Backend unreachable or profile failed → drop the session
+        // instead of crashing with an uncaught rejection.
+        get().logout();
+      }
     } else {
       get().logout();
     }

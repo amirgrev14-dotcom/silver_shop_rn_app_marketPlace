@@ -3,7 +3,7 @@ import { emailVerificationSchema } from "./schema.js";
 import { EmailVerifyService } from "./service.js";
 import type { FastifyRequest, FastifyReply } from "fastify";
 
-type CheckVerifyQuery = {
+type CheckVerifyParams = {
   token: string;
   id: string;
 };
@@ -25,10 +25,10 @@ export class EmailVerifyController {
   }
 
   async checkVerify(request: FastifyRequest<{
-    Querystring: CheckVerifyQuery
+    Params: CheckVerifyParams
   }>,
    reply: FastifyReply) {
-    const { token, id } = request.params as unknown as CheckVerifyQuery;
+    const { token, id } = request.params;
 
     console.log("CHECK VERIFY REQUEST:", { token, id });
     const result = await this.authService.checkVerify(token, id);

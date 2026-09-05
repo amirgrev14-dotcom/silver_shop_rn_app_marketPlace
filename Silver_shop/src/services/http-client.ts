@@ -2,7 +2,15 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { environment } from '@/config/environment';
 
 import { tokenStorage } from '@/lib/storage/token-storage';
-import { useAppStore } from '@/stores/app-store';
+
+// NOTE: useAppStore is intentionally NOT imported at the top level —
+// app-store -> auth-service -> http-client -> app-store would be a
+// require cycle. It is required lazily inside the 401 handler instead.
+function logoutStore() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { useAppStore } = require('@/stores/app-store') as typeof import('@/stores/app-store');
+  useAppStore.getState().logout();
+}
 
 // Module-level guard to prevent concurrent refresh requests
 let isRefreshing = false;
@@ -83,7 +91,7 @@ httpClient.interceptors.response.use(
         isRefreshing = false;
         processQueue(error, null);
         // No refresh token → logout
-        useAppStore.getState().logout();
+        logoutStore();
         return Promise.reject(error);
       }
 
@@ -122,7 +130,7 @@ httpClient.interceptors.response.use(
         isRefreshing = false;
         processQueue(refreshError, null);
         // Refresh failed → logout
-        useAppStore.getState().logout();
+        logoutStore();
         return Promise.reject(refreshError);
       }
     }

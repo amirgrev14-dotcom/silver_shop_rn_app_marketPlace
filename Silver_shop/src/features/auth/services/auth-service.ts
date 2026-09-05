@@ -28,11 +28,12 @@ function normalizeUser(raw: any): AuthUser {
     id: String(raw?.id ?? ''),
     name: String(raw?.name ?? ''),
     email: String(raw?.email ?? ''),
-    // Backend currently returns no verification flag → default to false
-    // so the verify-email flow is reachable; accepts common aliases.
-    isVerifiedEmail: Boolean(
-      raw?.isVerifiedEmail ?? raw?.isEmailVerified ?? raw?.emailVerified ?? raw?.verified ?? false
-    ),
+    // Backend has no boolean flag — verification is `emailVerifiedAt: Date | null`.
+    // A non-null timestamp (or any legacy truthy alias) means verified.
+    isVerifiedEmail:
+      Boolean(
+        raw?.isVerifiedEmail ?? raw?.isEmailVerified ?? raw?.emailVerified ?? raw?.verified
+      ) || raw?.emailVerifiedAt != null,
   };
 }
 
@@ -65,13 +66,12 @@ export function toApiMessage(error: unknown, fallback: string): string {
 }
 
 export async function register(values: RegisterFormValues): Promise<AuthResponse> {
-  // Backend requires confirmPassword (500 without it) — default to password
-  // so older call sites keep working.
+  // Backend registerSchema requires confirmPassword === password.
   const payload = {
     name: values.name,
     email: values.email,
     password: values.password,
-    confirmPassword: values.confirmPassword ?? values.password,
+    confirmPassword: values.confirmPassword,
   };
 
   try {
@@ -157,50 +157,55 @@ export async function logout(): Promise<void> {
   await tokenStorage.clear();
 }
 
-export async function verifyEmail(values: VerifyEmailValues): Promise<AuthResponse> {
-  // Magic-link confirmation: the email link carries a token (+ user id).
-  // Backend convention is GET /auth/verify-email?token=…&userId=…;
-  // fall back to POST with the same payload if the server expects a body.
-  const params = values.userId
-    ? { token: values.token, userId: values.userId }
-    : { token: values.token };
+export interface VerifyEmailResult {
+  email?: string;
+  message: string;
+}
+
+export async function verifyEmail(values: VerifyEmailValues): Promise<any> {
+  // New backend logic (email-verification/routes.ts):
+  //   GET /auth/email-verification/check/:token/:id
+  // Backend link carries `id` (user id); older links may use userId.
+  const id = values.userId ?? (values as { id?: string }).id;
+  if (!values.token || !id) {
+    throw new Error('Verification link is invalid (missing token or id).');
+  }
   try {
-    try {
-      const response = await httpClient.get('/auth/verify-email', { params });
+    const response = await httpClient.get(
+      `/auth/email-verification/check/${encodeURIComponent(values.token)}/${encodeURIComponent(id)}`
+    );
 
-      if (response.data?.success === false) {
-        throw new Error(response.data.message || 'Verification failed');
-      }
-
-      return toAuthResponse(response.data);
-    } catch (getError) {
-      // If the endpoint only accepts POST, retry once with a body.
-      if (isAxiosError(getError) && getError.response?.status === 404) {
-        throw getError;
-      }
-      if (isAxiosError(getError) && getError.response?.status === 405) {
-        const response = await httpClient.post('/auth/verify-email', params);
-
-        if (response.data?.success === false) {
-          throw new Error(response.data.message || 'Verification failed');
-        }
-
-        return toAuthResponse(response.data);
-      }
-      throw getError;
+    if (response.data?.success === false) {
+      throw new Error(response.data.message || 'Verification failed');
     }
+
+    const message: string =
+      response.data?.message ?? response.data?.data?.message ?? 'Email verified successfully';
+    const email: string | undefined = response.data?.data?.email ?? response.data?.email;
+
+    // Backend does not rotate tokens here; return message/email.
+    // Spread raw payload so callers expecting AuthResponse tokens keep working when present.
+    const payload = unwrap<any>(response.data);
+    return {
+      ...(payload ?? {}),
+      email: email ?? payload?.email,
+      message,
+    };
   } catch (error) {
     throw new Error(toApiMessage(error, 'Verification failed'));
   }
 }
 
-export async function resendVerificationCode(email: string): Promise<void> {
+export async function resendVerificationCode(email: string): Promise<{ message: string }> {
+  // New backend logic: POST /auth/email-verification/send { email }
   try {
-    const response = await httpClient.post('/auth/resend-verification', { email });
+    const response = await httpClient.post('/auth/email-verification/send', { email });
 
     if (response.data?.success === false) {
       throw new Error(response.data.message || 'Resend failed');
     }
+
+    return { message: response.data?.message ?? 'Verification email sent' };
   } catch (error) {
     throw new Error(toApiMessage(error, 'Resend failed'));
   }

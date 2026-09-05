@@ -55,7 +55,9 @@ app.get('/health',  (request, reply) => {
 const start = async () => {
   try {
     const port = Number(process.env.PORT ?? 3000)
-    const host = process.env.URL_API_RENDER ?? "0.0.0.0"
+    // NOTE: URL_API_RENDER is the public URL (https://…), not a listen
+    // address — app.listen needs a hostname/IP, so always bind 0.0.0.0.
+    const host = process.env.HOST ?? "0.0.0.0"
 
     await app.listen({ port, host })
   } catch (error) {

@@ -48,6 +48,7 @@ export function RegisterForm({
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
       name: "",
     },
   });
@@ -86,6 +87,7 @@ export function RegisterForm({
      // Reset the form
       setValue("email", "");
       setValue("password", "");
+      setValue("confirmPassword", "");
       setValue("name", "");
     } catch (err: unknown) {
       setServerError(err instanceof Error ? err.message : "Registration failed");
@@ -192,7 +194,32 @@ export function RegisterForm({
               )}
               />
 
-              
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { onChange, onBlur, value } }) => (
+              <AppInput
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                label="Confirm password"
+                placeholder="••••••••••"
+                rightIcon={
+                  <Pressable onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+                    <AppIcon
+                      icon={isPasswordVisible ? LockKeyholeOpenIcon : LockKeyhole}
+                      size={20}
+                      color="primary"
+                    />
+                  </Pressable>
+                }
+                secureTextEntry={!isPasswordVisible}
+                error={errors.confirmPassword?.message}
+               />
+              )}
+              />
+
+            
 
             <Text className="self-end text-sm font-medium text-primary">
               Forgot password?

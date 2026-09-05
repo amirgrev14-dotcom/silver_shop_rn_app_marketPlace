@@ -14,9 +14,22 @@ export const errorMiddleware = async (
       message: error.message,
     });
   }
-  
-  return reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+
+  // Fastify schema-validation failures (e.g. bad params/body shape)
+  // must not surface as 500s.
+  if (error.validation) {
+    return reply.status(HttpStatus.BAD_REQUEST).send({
+      success: false,
+      message: error.message,
+    });
+  }
+
+  const status =
+    typeof error.statusCode === "number"
+      ? error.statusCode
+      : HttpStatus.INTERNAL_SERVER_ERROR;
+  return reply.status(status).send({
     success: false,
-    message: "Internal Server Error",
+    message: status === HttpStatus.INTERNAL_SERVER_ERROR ? "Internal Server Error" : error.message,
   });
 }

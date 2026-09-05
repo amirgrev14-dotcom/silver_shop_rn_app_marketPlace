@@ -5,11 +5,13 @@ declare module "@fastify/jwt" {
     payload: {
       id: string;
       email: string;
+      type?: "access" | "refresh";
     };
 
     user: {
       id: string;
       email: string;
+      type?: "access" | "refresh";
     }
   }
 }

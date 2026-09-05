@@ -73,6 +73,8 @@ refresh = async (request: FastifyRequest, reply: FastifyReply) => {
 
   const result = await this.authService.refresh(refreshToken)
 
+  this.setRefreshToken(reply, result.refreshToken)
+
   reply.send({
     success: true,
     data: result,
@@ -82,6 +84,12 @@ refresh = async (request: FastifyRequest, reply: FastifyReply) => {
 logout = async (request: FastifyRequest, reply: FastifyReply) => {
   reply.clearCookie("refreshToken", {
     path: "/",
+  })
+
+  return reply.send({
+    success: true,
+    message: "Logged out successfully",
+    data: null,
   })
 }
 }

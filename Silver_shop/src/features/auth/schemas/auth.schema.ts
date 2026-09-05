@@ -6,7 +6,7 @@ export const loginSchema = z.object({
     .min(1, 'Email is required')
     .email('Enter a valid email address'),
 
-  password: z.string().min(6, 'Password is required'),
+  password: z.string().min(8, 'Password must contain at least 8 characters'),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
@@ -21,13 +21,12 @@ export const registerSchema = z.object({
     .min(1, 'Email is required')
     .email('Enter a valid email address'),
 
-  password: z.string().min(6, 'Password must contain at least 6 characters'),
+  password: z.string().min(8, 'Password must contain at least 8 characters'),
 
-  // Optional in the form (no confirm field in UI yet) — the service
-  // defaults it to `password` because the backend requires it.
-  confirmPassword: z.string().min(6).optional(),
+  // Required to match the backend registerSchema (password === confirmPassword).
+  confirmPassword: z.string().min(8, 'Please confirm your password'),
 }).refine(
-  (data) => !data.confirmPassword || data.confirmPassword === data.password,
+  (data) => data.confirmPassword === data.password,
   { message: 'Passwords do not match', path: ['confirmPassword'] }
 );
 

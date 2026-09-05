@@ -124,14 +124,20 @@ async refresh(refreshToken: string) {
   // verify refresh token and get payload id, email
   const payload = this.tokenService.verifyRefreshToken(refreshToken)
 
-  // generate new access token and return refresh token
+  // rotate: issue a fresh pair so a leaked refresh token has a short window
   const accessToken = this.tokenService.signAccessToken({
+    id: payload.id,
+    email: payload.email
+  })
+
+  const newRefreshToken = this.tokenService.signRefreshToken({
     id: payload.id,
     email: payload.email
   })
 
   return {
     accessToken,
+    refreshToken: newRefreshToken,
   }
 }
 

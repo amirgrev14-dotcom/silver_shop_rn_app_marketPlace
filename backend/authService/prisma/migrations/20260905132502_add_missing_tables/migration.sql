@@ -1,0 +1,33 @@
+/*
+  Warnings:
+
+  - Added the required column `role` to the `User` table without a default value. This is not possible if the table is not empty.
+
+*/
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('BUYER_SELLER', 'ADMIN_SUPER_ADMIN');
+
+-- CreateEnum
+CREATE TYPE "AccountStatus" AS ENUM ('PENDING', 'ACTIVE', 'SUSPENDED', 'BLOCKED');
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "emailVerifiedAt" TIMESTAMP(3),
+ADD COLUMN     "role" "Role" NOT NULL DEFAULT 'BUYER_SELLER',
+ADD COLUMN     "status" "AccountStatus" NOT NULL DEFAULT 'PENDING';
+
+-- CreateTable
+CREATE TABLE "EmailVerificationToken" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tokenHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EmailVerificationToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EmailVerificationToken_tokenHash_key" ON "EmailVerificationToken"("tokenHash");
+
+-- AddForeignKey
+ALTER TABLE "EmailVerificationToken" ADD CONSTRAINT "EmailVerificationToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

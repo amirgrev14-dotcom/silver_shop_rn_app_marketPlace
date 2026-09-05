@@ -4,6 +4,8 @@ import "dotenv/config";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 // routes
 import { authRoutes } from "./modules/auth/routes.js";
+import { emailVerificationRoutes } from "./modules/auth/email-verification/routes.js";
+
 // plugins
 import jwtPlugin from "./plugins/jwt.js";
 import fastifyCookie from "@fastify/cookie";
@@ -40,6 +42,10 @@ await app.register(fastifyCookie)
 // routes
 app.register(authRoutes, {
   prefix: "/api/auth"
+})
+
+app.register(emailVerificationRoutes, {
+  prefix: "api/auth/email-verification"
 })
 
 app.get('/health',  (request, reply) => {

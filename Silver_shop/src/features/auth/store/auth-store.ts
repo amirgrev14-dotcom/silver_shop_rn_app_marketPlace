@@ -1,27 +1,31 @@
 import { create } from 'zustand';
 import { tokenStorage } from '@/lib/storage/token-storage';
-import { refreshToken, logout as logoutBackend } from '@/features/auth/services/auth-service';
+import { refreshToken as refreshTokenRequest, logout as logoutBackend, getMe } from '@/features/auth/services/auth-service';
 
 type User = {
   id: string;
   name: string;
   email: string;
+  isVerifiedEmail: boolean;
 };
 
 type AuthState = {
   isAuthenticated: boolean;
+  isVerifiedEmail: boolean;
   accessTokenExpiry: number | null;
   refreshInProgress: boolean;
   user: User | null;
 
   login: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
+  setEmailVerified: (value?: boolean) => void;
   refresh: () => Promise<{ accessToken: string; refreshToken: string }>;
   restoreSession: () => void;
 };
 
 export const useAppStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
+  isVerifiedEmail: false,
   accessTokenExpiry: null,
   refreshInProgress: false,
   user: null,
@@ -31,6 +35,7 @@ export const useAppStore = create<AuthState>((set, get) => ({
 
     set({
       isAuthenticated: true,
+      isVerifiedEmail: user.isVerifiedEmail ?? false,
       accessTokenExpiry: Date.now() + 15 * 60 * 1000,
       user,
     });
@@ -41,8 +46,17 @@ export const useAppStore = create<AuthState>((set, get) => ({
     await tokenStorage.clear();
     set({
       isAuthenticated: false,
+      isVerifiedEmail: false,
       accessTokenExpiry: null,
       user: null,
+    });
+  },
+
+  setEmailVerified: (value = true) => {
+    const user = get().user;
+    set({
+      isVerifiedEmail: value,
+      user: user ? { ...user, isVerifiedEmail: value } : user,
     });
   },
 
@@ -50,11 +64,11 @@ export const useAppStore = create<AuthState>((set, get) => ({
     set({ refreshInProgress: true });
 
     try {
-      const { accessToken, refreshToken } = await refreshToken();
+      const { accessToken, refreshToken: newRefreshToken } = await refreshTokenRequest();
 
-      get().login(accessToken, refreshToken, get().user!);
+      get().login(accessToken, newRefreshToken, get().user!);
 
-      return { accessToken, refreshToken };
+      return { accessToken, refreshToken: newRefreshToken };
     } finally {
       set({ refreshInProgress: false });
     }
@@ -62,11 +76,11 @@ export const useAppStore = create<AuthState>((set, get) => ({
 
   restoreSession: async () => {
     const accessToken = await tokenStorage.getAccess();
-    const refreshToken = await tokenStorage.getRefresh();
+    const storedRefreshToken = await tokenStorage.getRefresh();
 
-    if (accessToken && refreshToken) {
-      const { data } = await getMe();
-      get().login(accessToken, refreshToken, data.user);
+    if (accessToken && storedRefreshToken) {
+      const { user } = await getMe();
+      get().login(accessToken, storedRefreshToken, user);
     } else {
       get().logout();
     }

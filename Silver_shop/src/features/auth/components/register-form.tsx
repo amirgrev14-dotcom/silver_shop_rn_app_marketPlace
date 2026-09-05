@@ -23,14 +23,18 @@ import {
 interface RegisterFormProps {
   onBack: () => void;
   onLogin: () => void;
+  onRequireVerification?: (email: string) => void;
 }
 
 export function RegisterForm({
   onBack,
   onLogin,
+  onRequireVerification,
 }: RegisterFormProps): React.JSX.Element {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
  const {
     control,
@@ -59,10 +63,12 @@ export function RegisterForm({
   };
 
   const onSubmit = async (data: RegisterFormData) => {
-    console.log("AUTH", data);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setServerError(null);
     try {
       const authResponse = await registerUser(data);
-      
+
       // Use the actual auth response data to login, not empty strings
       useAppStore.getState().login(
         authResponse.accessToken,
@@ -70,14 +76,22 @@ export function RegisterForm({
         authResponse.user
       );
 
+      if (!authResponse.user.isVerifiedEmail) {
+        onRequireVerification?.(authResponse.user.email);
+        return;
+      }
+
     //  handleNavigate(onHome);
 
      // Reset the form
       setValue("email", "");
       setValue("password", "");
       setValue("name", "");
-    } catch (err: any) {
-      }
+    } catch (err: unknown) {
+      setServerError(err instanceof Error ? err.message : "Registration failed");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -186,7 +200,12 @@ export function RegisterForm({
           </View>
 
           <View className="mt-6 gap-4">
-            <AppButton onPress={handleSubmit(onSubmit)}>Create Account</AppButton>
+            {serverError ? (
+              <Text className="text-center text-sm text-error">{serverError}</Text>
+            ) : null}
+            <AppButton onPress={handleSubmit(onSubmit)} loading={isSubmitting}>
+              Create Account
+            </AppButton>
 
             <View className="flex-row items-center gap-3">
               <View className="h-px flex-1 bg-border" />

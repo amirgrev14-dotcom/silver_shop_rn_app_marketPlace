@@ -2,17 +2,28 @@ import { useState } from "react";
 
 import { LoginForm } from "./login-form";
 import { RegisterForm } from "./register-form";
+import { VerifyEmailForm } from "./verify-email-form";
 import { WelcomeScreen } from "./welcome-screen";
 
-export type AuthScreen = "welcome" | "register" | "login";
+export type AuthScreen = "welcome" | "register" | "login" | "verify-email";
+
+interface AuthEntryScreenProps {
+  onVerified?: () => void;
+}
 
 /**
- * Local-only auth-flow shell. Switches between Welcome, Login and Register
- * using local state; no navigation or persistence is intentionally performed
- * at this stage.
+ * Local-only auth-flow shell. Switches between Welcome, Login, Register
+ * and VerifyEmail using local state; no navigation or persistence is
+ * intentionally performed at this stage.
  */
-export function AuthEntryScreen(): React.JSX.Element {
+export function AuthEntryScreen({ onVerified }: AuthEntryScreenProps = {}): React.JSX.Element {
   const [screen, setScreen] = useState<AuthScreen>("welcome");
+  const [pendingEmail, setPendingEmail] = useState("");
+
+  const requireVerification = (email: string) => {
+    setPendingEmail(email);
+    setScreen("verify-email");
+  };
 
   switch (screen) {
     case "login":
@@ -20,6 +31,7 @@ export function AuthEntryScreen(): React.JSX.Element {
         <LoginForm
           onBack={() => setScreen("welcome")}
           onRegister={() => setScreen("register")}
+          onRequireVerification={requireVerification}
         />
       );
 
@@ -28,6 +40,17 @@ export function AuthEntryScreen(): React.JSX.Element {
         <RegisterForm
           onBack={() => setScreen("welcome")}
           onLogin={() => setScreen("login")}
+          onRequireVerification={requireVerification}
+        />
+      );
+
+    case "verify-email":
+      return (
+        <VerifyEmailForm
+          email={pendingEmail}
+          onBack={() => setScreen("login")}
+          onChangeEmail={() => setScreen("register")}
+          onVerified={() => onVerified?.()}
         />
       );
 

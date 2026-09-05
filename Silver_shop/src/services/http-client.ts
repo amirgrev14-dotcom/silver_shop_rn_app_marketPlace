@@ -1,12 +1,12 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { environment } from '@/config/environment';
-import * as SecureStore from 'expo-secure-store';
 
+import { tokenStorage } from '@/lib/storage/token-storage';
 import { useAppStore } from '@/stores/app-store';
 
 // Module-level guard to prevent concurrent refresh requests
 let isRefreshing = false;
-let failedQueue: Array<{ onError: (error: any) => void; onSuccess: (token: string) => void }> = [];
+let failedQueue: { onError: (error: any) => void; onSuccess: (token: string) => void }[] = [];
 
 const processQueue = (error: Error | null, token: string | null) => {
   failedQueue.forEach(({ onError, onSuccess }) => {
@@ -20,28 +20,44 @@ const processQueue = (error: Error | null, token: string | null) => {
   failedQueue = [];
 };
 
-const resetQueue = () => {
-  failedQueue = [];
-};
-
-
-console.log("DEV DEV DEV", environment.apiUrl)
+if (__DEV__) {
+  console.log('[httpClient] baseURL:', environment.apiUrl);
+}
 
 export const httpClient: AxiosInstance = axios.create({
   baseURL: environment.apiUrl,
   headers: {
     Accept: 'application/json',
+    'Content-Type': 'application/json',
   },
   timeout: 15_000,
   withCredentials: true,
 });
 
+// Request interceptor — add auth header from SecureStore (single source of truth)
+httpClient.interceptors.request.use(
+  async (config) => {
+    const token = await tokenStorage.getAccess();
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Response interceptor — handle 401 with refresh token flow
 httpClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: any) => {
     const originalRequest = error.config;
+
+    if (__DEV__ && error.response) {
+      console.log(
+        `[httpClient] ${error.response.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.baseURL ?? ''}${originalRequest?.url ?? ''} →`,
+        JSON.stringify(error.response.data)?.slice(0, 300)
+      );
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -61,43 +77,50 @@ httpClient.interceptors.response.use(
 
       isRefreshing = true;
 
-      // Read refresh token from SecureStore; withCredentials: true will
-      // automatically send the refreshToken cookie set by the backend login/register
-      const refreshToken = await SecureStore.getItemAsync('auth/refresh_token');
+      const refreshToken = await tokenStorage.getRefresh();
 
       if (!refreshToken) {
         isRefreshing = false;
-        resetQueue();
+        processQueue(error, null);
         // No refresh token → logout
         useAppStore.getState().logout();
         return Promise.reject(error);
       }
 
       try {
-        // Call refresh endpoint - withCredentials: true will send the
-        // refreshToken cookie automatically. Do NOT send refreshToken in body
-        // as the backend expects it in the cookie, not the request body.
+        // Plain axios (no interceptors) to avoid an infinite refresh loop.
+        // withCredentials: true sends the refreshToken cookie when the
+        // backend uses HTTP-only cookies.
         const response = await axios.post(
-          `${environment.apiUrl}/api/auth/refresh`,
-          {},  // empty body - token comes via cookie
+          `${environment.apiUrl}/auth/refresh`,
+          {},
           { withCredentials: true }
         );
 
-        const newAccessToken = response.data.accessToken;
+        const payload = response.data?.data ?? response.data;
+        const newAccessToken: string = payload.accessToken;
+        const newRefreshToken: string | undefined = payload.refreshToken;
 
-        // Update SecureStore
-        await SecureStore.setItemAsync('auth/access_token', newAccessToken);
+        // Update SecureStore via the single source of truth
+        if (newRefreshToken) {
+          await tokenStorage.setTokens(newAccessToken, newRefreshToken);
+        } else {
+          const currentRefresh = await tokenStorage.getRefresh();
+          if (currentRefresh) {
+            await tokenStorage.setTokens(newAccessToken, currentRefresh);
+          }
+        }
 
         // Retry all queued requests with new token
         isRefreshing = false;
-        resetQueue();
+        processQueue(null, newAccessToken);
 
         // Retry the original request
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return httpClient(originalRequest);
       } catch (refreshError: any) {
         isRefreshing = false;
-        resetQueue();
+        processQueue(refreshError, null);
         // Refresh failed → logout
         useAppStore.getState().logout();
         return Promise.reject(refreshError);
@@ -106,16 +129,4 @@ httpClient.interceptors.response.use(
 
     return Promise.reject(error);
   }
-);
-
-// Request interceptor — add auth header from SecureStore
-httpClient.interceptors.request.use(
-  async (config) => {
-    const token = await SecureStore.getItemAsync('auth/access_token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
 );

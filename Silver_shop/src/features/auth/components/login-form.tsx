@@ -23,14 +23,18 @@ import {
 interface LoginFormProps {
   onBack: () => void;
   onRegister: () => void;
+  onRequireVerification?: (email: string) => void;
 }
 
 export function LoginForm({
   onBack,
   onRegister,
+  onRequireVerification,
 }: LoginFormProps): React.JSX.Element {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
    const {
       control,
@@ -58,19 +62,30 @@ export function LoginForm({
   };
 
   const onSubmit = async (data: LoginFormData) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setServerError(null);
     try {
       const authResponse = await login(data);
 
       useAppStore.getState().login(
-        data.email,
-        data.password,
+        authResponse.accessToken,
+        authResponse.refreshToken,
         authResponse.user
       );
-      
+
+      if (!authResponse.user.isVerifiedEmail) {
+        onRequireVerification?.(authResponse.user.email);
+        return;
+      }
+
       // handleNavigate(onHome)\;
       setValue("email", "");
       setValue("password", "");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      setServerError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -159,7 +174,12 @@ export function LoginForm({
           </View>
 
           <View className="mt-6 gap-4">
-            <AppButton onPress={handleSubmit(onSubmit)}>Sign In</AppButton>
+            {serverError ? (
+              <Text className="text-center text-sm text-error">{serverError}</Text>
+            ) : null}
+            <AppButton onPress={handleSubmit(onSubmit)} loading={isSubmitting}>
+              Sign In
+            </AppButton>
 
             <View className="flex-row items-center gap-3">
               <View className="h-px flex-1 bg-border" />

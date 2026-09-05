@@ -3,14 +3,17 @@ export interface ApiErrorPayload {
   message: string;
 }
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  isVerifiedEmail: boolean;
+}
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  user: AuthUser;
 }
 
 export interface LoginFormValues {
@@ -22,4 +25,15 @@ export interface RegisterFormValues {
   name: string;
   email: string;
   password: string;
+  confirmPassword?: string;
+}
+
+export interface VerifyEmailValues {
+  token: string;
+  userId?: string;
+}
+
+export interface VerifyLinkParams {
+  token: string;
+  userId?: string;
 }

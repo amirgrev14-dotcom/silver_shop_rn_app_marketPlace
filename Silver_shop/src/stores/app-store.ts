@@ -9,16 +9,19 @@ type User = {
   id: string;
   name: string;
   email: string;
+  isVerifiedEmail: boolean;
 };
 
 type AuthState = {
   isAuthenticated: boolean;
+  isVerifiedEmail: boolean;
   accessTokenExpiry: number | null;
   refreshInProgress: boolean;
   user: User | null;
 
   login: (accessToken: string, refreshToken: string, user: User) => void;
   logout: () => void;
+  setEmailVerified: (value?: boolean) => void;
   refresh: () => Promise<{ accessToken: string; refreshToken: string }>;
   restoreSession: () => void;
 };
@@ -27,12 +30,14 @@ type AppState = {
   hasCompletedOnboarding: boolean;
   setHasCompletedOnboarding: (value: boolean) => void;
   isAuthenticated: boolean;
+  isVerifiedEmail: boolean;
   accessTokenExpiry: number | null;
   refreshInProgress: boolean;
   user: User | null;
 
   login: AuthState['login'];
   logout: AuthState['logout'];
+  setEmailVerified: AuthState['setEmailVerified'];
   refresh: AuthState['refresh'];
   restoreSession: AuthState['restoreSession'];
 };
@@ -44,6 +49,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Auth state
   isAuthenticated: false,
+  isVerifiedEmail: false,
   accessTokenExpiry: null,
   refreshInProgress: false,
   user: null,
@@ -52,8 +58,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     tokenStorage.setTokens(accessToken, refreshToken);
     set({
       isAuthenticated: true,
+      isVerifiedEmail: user.isVerifiedEmail ?? false,
       accessTokenExpiry: Date.now() + 15 * 60 * 1000,
       user,
+    });
+  },
+
+  setEmailVerified: (value = true) => {
+    const user = get().user;
+    set({
+      isVerifiedEmail: value,
+      user: user ? { ...user, isVerifiedEmail: value } : user,
     });
   },
 
@@ -62,6 +77,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     await tokenStorage.clear();
     set({
       isAuthenticated: false,
+      isVerifiedEmail: false,
       accessTokenExpiry: null,
       user: null,
     });

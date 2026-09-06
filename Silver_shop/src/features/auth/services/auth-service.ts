@@ -157,85 +157,53 @@ export async function logout(): Promise<void> {
   await tokenStorage.clear();
 }
 
-export interface VerifyEmailResult {
-  email?: string;
+/* ------------------------------------------------------------------ */
+/* Email verification (magic link).                                    */
+/* Backend: backend/authService/src/modules/auth/email-verification/   */
+/*   POST /auth/email-verification/send { email } → { message }        */
+/*   GET  /auth/email-verification/check/:token/:id → { email, msg }   */
+/* The backend never returns tokens here — it only sets                */
+/* User.emailVerifiedAt. So there is nothing to store, just messages.  */
+/* ------------------------------------------------------------------ */
+
+export interface VerifyResult {
+  email: string;
   message: string;
 }
 
-export async function verifyEmail(values: VerifyEmailValues): Promise<any> {
-  // New backend logic (email-verification/routes.ts):
-  //   GET /auth/email-verification/check/:token/:id
-  // Backend link carries `id` (user id); older links may use userId.
-  const id = values.userId ?? (values as { id?: string }).id;
-  if (!values.token || !id) {
-    throw new Error('Verification link is invalid (missing token or id).');
-  }
+export async function verifyEmail(values: VerifyEmailValues): Promise<VerifyResult> {
   try {
-    const response = await httpClient.get(
-      `/auth/email-verification/check/${encodeURIComponent(values.token)}/${encodeURIComponent(id)}`
+    const { data } = await httpClient.get(
+      `/auth/email-verification/check/${encodeURIComponent(values.token)}/${encodeURIComponent(values.id)}`,
     );
-
-    if (response.data?.success === false) {
-      throw new Error(response.data.message || 'Verification failed');
-    }
-
-    const message: string =
-      response.data?.message ?? response.data?.data?.message ?? 'Email verified successfully';
-    const email: string | undefined = response.data?.data?.email ?? response.data?.email;
-
-    // Backend does not rotate tokens here; return message/email.
-    // Spread raw payload so callers expecting AuthResponse tokens keep working when present.
-    const payload = unwrap<any>(response.data);
     return {
-      ...(payload ?? {}),
-      email: email ?? payload?.email,
-      message,
+      email: data?.data?.email ?? '',
+      message: data?.message ?? 'Email verified successfully',
     };
   } catch (error) {
     throw new Error(toApiMessage(error, 'Verification failed'));
   }
 }
 
-export async function resendVerificationCode(email: string): Promise<{ message: string }> {
-  // New backend logic: POST /auth/email-verification/send { email }
+export async function resendVerificationCode(email: string): Promise<string> {
   try {
-    const response = await httpClient.post('/auth/email-verification/send', { email });
-
-    if (response.data?.success === false) {
-      throw new Error(response.data.message || 'Resend failed');
-    }
-
-    return { message: response.data?.message ?? 'Verification email sent' };
+    const { data } = await httpClient.post('/auth/email-verification/send', { email });
+    return data?.message ?? 'Verification email sent';
   } catch (error) {
     throw new Error(toApiMessage(error, 'Resend failed'));
   }
 }
 
-/**
- * Extracts magic-link params from an incoming URL.
- * Accepts `token` (+ `userId` / `user_id` / `id`) from query string or hash.
- * Returns null when the URL carries no verification token.
- */
+/** Pulls `token` + `id` out of a magic-link URL (query string or hash). */
 export function parseVerificationLink(url: string): VerifyEmailValues | null {
   try {
-    const queryStart = url.indexOf('?');
-    const hashStart = url.indexOf('#');
-    const rawQuery =
-      queryStart >= 0
-        ? url.slice(queryStart + 1, hashStart >= 0 && hashStart > queryStart ? hashStart : undefined)
-        : hashStart >= 0
-          ? url.slice(hashStart + 1)
-          : '';
-
-    const params = new URLSearchParams(rawQuery);
+    const query = url.split('?')[1]?.split('#')[0] ?? url.split('#')[1] ?? '';
+    const params = new URLSearchParams(query);
     const token = params.get('token')?.trim();
+    // The verified user id — accepts `userId` first, then the backend link's `id`.
+    const id = params.get('userId') ?? params.get('id') ?? params.get('user_id');
 
-    if (!token) return null;
-
-    const userId =
-      params.get('userId') ?? params.get('user_id') ?? params.get('user-id') ?? params.get('id') ?? undefined;
-
-    return userId ? { token, userId } : { token };
+    return token && id ? { token, id } : null;
   } catch {
     return null;
   }

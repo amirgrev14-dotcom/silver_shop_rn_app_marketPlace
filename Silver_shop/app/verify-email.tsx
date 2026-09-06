@@ -12,43 +12,31 @@ import {
 } from "@/features/auth/services/auth-service";
 import { useAppStore } from "@/stores/app-store";
 
-/**
- * Deep-link entry: `silvershop://verify-email?token=…&userId=…`
- * (or the https variant). Confirms the email and routes home.
- */
+/** Deep-link entry: `silvershop://verify-email?token=…&id=…`. Confirms and goes home. */
 export default function VerifyEmailRoute(): React.JSX.Element {
   const router = useRouter();
-  const params = useLocalSearchParams<{ token?: string; userId?: string }>();
+  const params = useLocalSearchParams<{ token?: string; id?: string; userId?: string }>();
+  const setEmailVerified = useAppStore((s) => s.setEmailVerified);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     const confirm = async () => {
-      // Prefer expo-router params, fall back to raw URL parsing.
-      const raw =
-        typeof params.token === "string" && params.token
-          ? `verify-email?token=${encodeURIComponent(params.token)}${
-              params.userId ? `&userId=${encodeURIComponent(params.userId)}` : ""
-            }`
-          : ((await Linking.getInitialURL()) ?? "");
+      // expo-router params first, raw URL as fallback.
+      const id = params.id ?? params.userId;
+      const link =
+        params.token && id
+          ? { token: params.token, id }
+          : parseVerificationLink((await Linking.getInitialURL()) ?? "");
 
-      const link = parseVerificationLink(raw);
       if (!link) {
         setError("This verification link is invalid or expired.");
         return;
       }
 
       try {
-        const response = await verifyEmail(link);
-        if (response.accessToken && response.refreshToken) {
-          useAppStore.getState().login(
-            response.accessToken,
-            response.refreshToken,
-            { ...response.user, isVerifiedEmail: true }
-          );
-        } else {
-          useAppStore.getState().setEmailVerified(true);
-        }
+        await verifyEmail(link);
+        setEmailVerified(true);
         setDone(true);
         setTimeout(() => router.replace("/"), 800);
       } catch (err) {

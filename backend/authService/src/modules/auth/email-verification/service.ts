@@ -50,7 +50,7 @@ export class EmailVerifyService {
       },
     });
 
-    const verificationLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/verify-email?token=${plainToken}&id=${user.id}`;
+    const verificationLink = `${process.env.MOBILE_APP_URL}?token=${plainToken}&userId=${user.id}`;
 
     console.log(`[EMAIL VERIFICATION] To: ${email}`);
     console.log(`[EMAIL VERIFICATION] Verification link: ${verificationLink}`);

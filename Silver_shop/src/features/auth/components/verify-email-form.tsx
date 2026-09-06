@@ -46,6 +46,7 @@ export function VerifyEmailForm({
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
 
   const incomingUrl = Linking.useURL();
+  const setEmailVerified = useAppStore((s) => s.setEmailVerified);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -54,21 +55,13 @@ export function VerifyEmailForm({
   }, [cooldown]);
 
   const confirmWithLink = async (url: string) => {
-    const params = parseVerificationLink(url);
-    if (!params) return;
+    const linkParams = parseVerificationLink(url);
+    if (!linkParams ) return;
     setStatus("verifying");
     setError(null);
     try {
-      const response = await verifyEmail(params);
-      if (response.accessToken && response.refreshToken) {
-        useAppStore.getState().login(
-          response.accessToken,
-          response.refreshToken,
-          { ...response.user, isVerifiedEmail: true }
-        );
-      } else {
-        useAppStore.getState().setEmailVerified(true);
-      }
+      await verifyEmail(linkParams);
+      setEmailVerified(true);
       setStatus("verified");
       onVerified();
     } catch (err) {
@@ -107,7 +100,7 @@ export function VerifyEmailForm({
     try {
       const { user } = await getMe();
       if (user.isVerifiedEmail) {
-        useAppStore.getState().setEmailVerified(true);
+        setEmailVerified(true);
         setStatus("verified");
         onVerified();
       } else {

@@ -30,10 +30,10 @@ export interface RegisterFormValues {
 
 export interface VerifyEmailValues {
   token: string;
-  userId?: string;
+  id: string;
 }
 
 export interface VerifyLinkParams {
   token: string;
-  userId?: string;
+  id: string;
 }

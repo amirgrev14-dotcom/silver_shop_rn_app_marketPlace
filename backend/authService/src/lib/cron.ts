@@ -3,10 +3,10 @@ import https from "https";
 
 const job = new cron.CronJob("*/14 * * * *", function () {
   
-  const url = process.env.URL_API_RENDER;
+  const url = process.env.DATABASE_URL;
 
   if (!url) {
-    console.error("URL_API_RENDER is not defined");
+    console.error("DATABASE_URL is not defined");
     return;
   }
   https

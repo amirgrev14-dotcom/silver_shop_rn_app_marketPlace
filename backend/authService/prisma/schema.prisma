@@ -12,8 +12,9 @@ datasource db {
 }
 
 enum Role {
-  BUYER_SELLER
-  ADMIN_SUPER_ADMIN
+  BUYER
+  SELLER
+  SUPER_ADMIN
 }
 
 enum AccountStatus {

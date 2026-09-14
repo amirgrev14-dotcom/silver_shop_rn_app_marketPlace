@@ -1,10 +1,12 @@
 import zod from "zod";
+import { Role } from "@prisma/client";
 
 export const registerSchema = zod.object({
   name: zod.string().min(2, "Name must be at least 2 characters"),
   email: zod.string().email("Invalid email"),
   password: zod.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: zod.string().min(8, "Password must be at least 8 characters"),
+  role: zod.enum([Role.BUYER, Role.SELLER]).default(Role.BUYER),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"]

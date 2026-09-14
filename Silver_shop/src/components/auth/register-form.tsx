@@ -1,4 +1,4 @@
-import { ArrowLeft, Eye, EyeOff, LockKeyhole, LockKeyholeOpen, LockKeyholeOpenIcon } from "lucide-react-native";
+import { ArrowLeft, Eye, EyeOff, LockKeyhole, LockKeyholeOpen, LockKeyholeOpenIcon, ShoppingBag, Store } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,8 +17,9 @@ import { AuthImageCard } from "@/components/ui/auth-image-card";
 import { ScreenLoader } from "@/components/ui/screen-loader";
 import {
   registerSchema,
-  type RegisterFormData,
-} from "../schemas/auth.schema";
+  type RegisterFormInput,
+} from "@/features/auth/schemas/auth.schema";
+import { getPostAuthDestination, roleToMode } from "@/features/auth/lib/post-auth";
 
 interface RegisterFormProps {
   onBack: () => void;
@@ -42,7 +43,7 @@ export function RegisterForm({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<RegisterFormData>({
+  } = useForm<RegisterFormInput>({
     resolver: zodResolver(registerSchema),
 
     defaultValues: {
@@ -50,8 +51,14 @@ export function RegisterForm({
       password: "",
       confirmPassword: "",
       name: "",
+      role: "buyer",
     },
   });
+
+  const ROLE_CARDS = [
+    { role: "buyer", title: "Buyer", subtitle: "I want to buy silver", icon: ShoppingBag },
+    { role: "seller", title: "Seller", subtitle: "I want to sell silver", icon: Store },
+  ] as const;
 
   const name = watch("name")
   const email = watch("email")
@@ -63,12 +70,15 @@ export function RegisterForm({
     setTimeout(() => navigate(), 400);
   };
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const onSubmit = async (data: RegisterFormInput) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     setServerError(null);
     try {
       const authResponse = await registerUser(data);
+
+      // Tab mode follows the DB role (source of truth), not the local pick.
+      useAppStore.getState().setMode(roleToMode(authResponse.user.role));
 
       // Use the actual auth response data to login, not empty strings
       useAppStore.getState().login(
@@ -77,8 +87,19 @@ export function RegisterForm({
         authResponse.user
       );
 
-      if (!authResponse.user.isVerifiedEmail) {
-        onRequireVerification?.(authResponse.user.email);
+      const destination = getPostAuthDestination(authResponse.user);
+      if (__DEV__) {
+        console.log(
+          "[auth] register ok:",
+          JSON.stringify({
+            email: authResponse.user.email,
+            isVerifiedEmail: authResponse.user.isVerifiedEmail,
+            destination: destination?.pathname ?? "(stay)",
+          })
+        );
+      }
+      if (destination) {
+        onRequireVerification?.(destination.params.email);
         return;
       }
 
@@ -107,7 +128,7 @@ export function RegisterForm({
             className="rounded-none border-0 opacity-80"
             size="full"
             accessibilityLabel="Silver necklace on white textile"
-            source={require("../../../../assets/images/welcome-silver-necklace.jpg")}
+            source={require("../../../assets/images/welcome-silver-necklace.jpg")}
           />
         </View>
 
@@ -129,6 +150,68 @@ export function RegisterForm({
               Join the Sliver community and start buying and selling silver
               items.
             </Text>
+          </View>
+
+          <View className="mt-8">
+            <Text className="mb-3 text-sm font-medium text-text-primary">
+              I join as
+            </Text>
+            <Controller
+              control={control}
+              name="role"
+              render={({ field: { onChange, value } }) => (
+                <View className="flex-row gap-3">
+                  {ROLE_CARDS.map((card) => {
+                    const isActive = value === card.role;
+                    return (
+                      <Pressable
+                        key={card.role}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: isActive }}
+                        onPress={() => onChange(card.role)}
+                        className={`flex-1 flex-row items-center gap-3 rounded-[14px] border p-3 active:opacity-70 ${
+                          isActive
+                            ? "border-primary bg-surface"
+                            : "border-border bg-surface"
+                        }`}
+                      >
+                        <View
+                          className={`h-11 w-11 items-center justify-center rounded-xl ${
+                            isActive ? "bg-primary" : "bg-silver-light"
+                          }`}
+                        >
+                          <AppIcon
+                            icon={card.icon}
+                            size={22}
+                            color={isActive ? "white" : "primary"}
+                          />
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-[15px] font-bold text-text-primary">
+                            {card.title}
+                          </Text>
+                          <Text className="text-xs leading-4 text-text-muted">
+                            {card.subtitle}
+                          </Text>
+                        </View>
+                        <View
+                          className={`h-5 w-5 items-center justify-center rounded-full border-2 ${
+                            isActive ? "border-primary" : "border-border"
+                          }`}
+                        >
+                          {isActive ? (
+                            <View className="h-2.5 w-2.5 rounded-full bg-primary" />
+                          ) : null}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+            />
+            {errors.role?.message ? (
+              <Text className="mt-2 text-sm text-error">{errors.role.message}</Text>
+            ) : null}
           </View>
 
           <View className="mt-8 gap-4">

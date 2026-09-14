@@ -56,7 +56,7 @@ export function WelcomeScreen({
             className="rounded-none border-0 opacity-80"
             size="full"
             accessibilityLabel="Silver necklace on white textile"
-            source={require("../../../../assets/images/welcome-silver-necklace.jpg")}
+            source={require("../../../assets/images/welcome-silver-necklace.jpg")}
           />
         </View>
 
@@ -66,7 +66,7 @@ export function WelcomeScreen({
             <AuthImageCard
               size="logo"
               accessibilityLabel="Silver necklace on white textile"
-              source={require("../../../../assets/images/bg-logo-silver-big.png")}
+              source={require("../../../assets/images/bg-logo-silver-big.png")}
             />
 
             <Text className="text-4xl font-semibold tracking-tight text-text-primary">

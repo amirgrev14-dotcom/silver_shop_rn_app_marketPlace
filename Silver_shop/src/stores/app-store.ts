@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { tokenStorage } from '@/lib/storage/token-storage';
 import { refreshToken, logout as logoutBackend, getMe } from '@/features/auth/services/auth-service';
 import { environment } from '@/config/environment';
+import type { MarketplaceMode } from '@/features/marketplace/types';
 
 type User = {
   id: string;
@@ -34,6 +35,8 @@ type AppState = {
   accessTokenExpiry: number | null;
   refreshInProgress: boolean;
   user: User | null;
+  mode: MarketplaceMode;
+  setMode: (mode: MarketplaceMode) => void;
 
   login: AuthState['login'];
   logout: AuthState['logout'];
@@ -53,6 +56,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   accessTokenExpiry: null,
   refreshInProgress: false,
   user: null,
+  mode: 'buyer',
+  setMode: (mode) => set({ mode }),
 
   login: (accessToken: string, refreshToken: string, user: User) => {
     tokenStorage.setTokens(accessToken, refreshToken);

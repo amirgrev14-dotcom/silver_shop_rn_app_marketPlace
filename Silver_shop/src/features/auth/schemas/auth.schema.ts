@@ -23,6 +23,9 @@ export const registerSchema = z.object({
 
   password: z.string().min(8, 'Password must contain at least 8 characters'),
 
+  // App mode only (not sent to the backend): buyer ↔ seller tabs.
+  role: z.enum(['buyer', 'seller']).default('buyer'),
+
   // Required to match the backend registerSchema (password === confirmPassword).
   confirmPassword: z.string().min(8, 'Please confirm your password'),
 }).refine(
@@ -31,6 +34,9 @@ export const registerSchema = z.object({
 );
 
 export type RegisterFormData = z.infer<typeof registerSchema>;
+
+/** Form input: `role` has a default, so on input it may be absent. */
+export type RegisterFormInput = z.input<typeof registerSchema>;
 
 export const verifyEmailLinkSchema = z.object({
   token: z.string().min(1, 'Verification token is required'),

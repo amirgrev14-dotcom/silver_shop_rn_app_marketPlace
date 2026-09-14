@@ -18,7 +18,21 @@
         "monochromeImage": "./assets/images/logo-silver.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.amirgrev.Silver_shop"
+      "package": "com.amirgrev.Silver_shop",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "verify.rayehjay.com",
+              "pathPrefix": "/verify-email"
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "output": "static",

@@ -5,7 +5,7 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
-import { AppProviders } from "@/components/app-providers";
+import { AppProviders } from "@/components/layout/app-providers";
 import "../global.css";
 
 configureReanimatedLogger({

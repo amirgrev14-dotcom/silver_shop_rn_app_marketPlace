@@ -1,28 +1,30 @@
 import { useState } from "react";
+import { useRouter } from "expo-router";
 
 import { LoginForm } from "./login-form";
 import { RegisterForm } from "./register-form";
-import { VerifyEmailForm } from "./verify-email-form";
 import { WelcomeScreen } from "./welcome-screen";
 
-export type AuthScreen = "welcome" | "register" | "login" | "verify-email";
+export type AuthScreen = "welcome" | "register" | "login";
 
 interface AuthEntryScreenProps {
   onVerified?: () => void;
 }
 
 /**
- * Local-only auth-flow shell. Switches between Welcome, Login, Register
- * and VerifyEmail using local state; no navigation or persistence is
- * intentionally performed at this stage.
+ * Local-only auth-flow shell for Welcome / Login / Register.
+ * Email verification lives on its own route (`/verify-email`) so that
+ * both the in-flow screen and a cold start via magic link land on the
+ * same single screen.
  */
 export function AuthEntryScreen({ onVerified }: AuthEntryScreenProps = {}): React.JSX.Element {
   const [screen, setScreen] = useState<AuthScreen>("welcome");
-  const [pendingEmail, setPendingEmail] = useState("");
+  const router = useRouter();
 
   const requireVerification = (email: string) => {
-    setPendingEmail(email);
-    setScreen("verify-email");
+    onVerified?.();
+    if (__DEV__) console.log("[auth] → /verify-email for", email);
+    router.push({ pathname: "/verify-email", params: { email } });
   };
 
   switch (screen) {
@@ -41,16 +43,6 @@ export function AuthEntryScreen({ onVerified }: AuthEntryScreenProps = {}): Reac
           onBack={() => setScreen("welcome")}
           onLogin={() => setScreen("login")}
           onRequireVerification={requireVerification}
-        />
-      );
-
-    case "verify-email":
-      return (
-        <VerifyEmailForm
-          email={pendingEmail}
-          onBack={() => setScreen("login")}
-          onChangeEmail={() => setScreen("register")}
-          onVerified={() => onVerified?.()}
         />
       );
 

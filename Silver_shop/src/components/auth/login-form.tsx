@@ -18,7 +18,8 @@ import { ScreenLoader } from "@/components/ui/screen-loader";
 import {
   loginSchema,
   type LoginFormData,
-} from "../schemas/auth.schema";
+} from "@/features/auth/schemas/auth.schema";
+import { getPostAuthDestination, roleToMode } from "@/features/auth/lib/post-auth";
 
 interface LoginFormProps {
   onBack: () => void;
@@ -68,14 +69,28 @@ export function LoginForm({
     try {
       const authResponse = await login(data);
 
+      // Tab mode follows the DB role (source of truth).
+      useAppStore.getState().setMode(roleToMode(authResponse.user.role));
+
       useAppStore.getState().login(
         authResponse.accessToken,
         authResponse.refreshToken,
         authResponse.user
       );
 
-      if (!authResponse.user.isVerifiedEmail) {
-        onRequireVerification?.(authResponse.user.email);
+      const destination = getPostAuthDestination(authResponse.user);
+      if (__DEV__) {
+        console.log(
+          "[auth] login ok:",
+          JSON.stringify({
+            email: authResponse.user.email,
+            isVerifiedEmail: authResponse.user.isVerifiedEmail,
+            destination: destination?.pathname ?? "(stay)",
+          })
+        );
+      }
+      if (destination) {
+        onRequireVerification?.(destination.params.email);
         return;
       }
 
@@ -100,7 +115,7 @@ export function LoginForm({
             className="rounded-none border-0 opacity-80"
             size="full"
             accessibilityLabel="Silver necklace on white textile"
-            source={require("../../../../assets/images/welcome-silver-necklace.jpg")}
+            source={require("../../../assets/images/welcome-silver-necklace.jpg")}
           />
         </View>
 

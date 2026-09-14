@@ -24,6 +24,7 @@ function unwrap<T>(raw: any): T {
 }
 
 function normalizeUser(raw: any): AuthUser {
+  const role = raw?.role;
   return {
     id: String(raw?.id ?? ''),
     name: String(raw?.name ?? ''),
@@ -34,6 +35,8 @@ function normalizeUser(raw: any): AuthUser {
       Boolean(
         raw?.isVerifiedEmail ?? raw?.isEmailVerified ?? raw?.emailVerified ?? raw?.verified
       ) || raw?.emailVerifiedAt != null,
+    // Role is set once at registration; unknown values fall back to BUYER.
+    role: role === 'SELLER' || role === 'SUPER_ADMIN' ? role : 'BUYER',
   };
 }
 
@@ -66,12 +69,14 @@ export function toApiMessage(error: unknown, fallback: string): string {
 }
 
 export async function register(values: RegisterFormValues): Promise<AuthResponse> {
-  // Backend registerSchema requires confirmPassword === password.
+  // Backend registerSchema requires confirmPassword === password, and accepts
+  // role BUYER|SELLER (SUPER_ADMIN is rejected there — DB only).
   const payload = {
     name: values.name,
     email: values.email,
     password: values.password,
     confirmPassword: values.confirmPassword,
+    role: (values.role ?? 'buyer').toUpperCase(),
   };
 
   try {

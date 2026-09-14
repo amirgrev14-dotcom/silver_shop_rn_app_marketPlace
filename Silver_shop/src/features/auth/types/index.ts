@@ -3,11 +3,14 @@ export interface ApiErrorPayload {
   message: string;
 }
 
+export type BackendRole = 'BUYER' | 'SELLER' | 'SUPER_ADMIN';
+
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
   isVerifiedEmail: boolean;
+  role: BackendRole;
 }
 
 export interface AuthResponse {
@@ -26,6 +29,7 @@ export interface RegisterFormValues {
   email: string;
   password: string;
   confirmPassword: string;
+  role?: 'buyer' | 'seller';
 }
 
 export interface VerifyEmailValues {

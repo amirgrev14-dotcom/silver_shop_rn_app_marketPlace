@@ -85,8 +85,16 @@ console.log("CHECK VERIFY TOKEN:", token, "USER ID:", userId)
     console.log("VERIFICATION RECORD:", verificationRecord)
 
     if (!verificationRecord) {
+      // No pending token does NOT mean verified — the record may have
+      // expired (and been deleted) or never existed. Trust only the user row.
       const user = await prisma.user.findUnique({ where: { id: userId } });
-      return { success: true, message: "Email already verified", data: { email: user?.email } };
+      if (user?.emailVerifiedAt) {
+        return { success: true, message: "Email already verified", data: { email: user?.email } };
+      }
+      throw new AppError(
+        HttpStatus.BAD_REQUEST,
+        "Verification link is invalid or expired. Please request a new one."
+      );
     }
 
     if (verificationRecord.expiresAt < new Date()) {

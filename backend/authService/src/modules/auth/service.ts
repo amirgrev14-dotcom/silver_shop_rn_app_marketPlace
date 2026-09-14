@@ -44,10 +44,10 @@ export class AuthService {
         email: data.email,
         password: hashedPassword,
         emailVerifiedAt: null,
-        role: "BUYER_SELLER",
+        role: data.role,
       }
     });
-    console.log("ROLE BUYER_SELLER", user)
+    console.log("ROLE BUYER, SELLER", user)
 
     // Access and refresh tokens
     const tokens = this.createTokens({
@@ -106,6 +106,7 @@ export class AuthService {
         email: true,
         role: true,
         name: true,
+        emailVerifiedAt: true,
         createdAt: true,
         updatedAt: true
       }

@@ -1,0 +1,38 @@
+// Standalone product catalog service. Shares the Postgres database with
+// auth-service but owns ONLY its tables — no Prisma relations across
+// services, sellerId is a plain string taken from the verified JWT.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  SOLD
+  ARCHIVED
+}
+
+model Product {
+  id          String        @id @default(uuid())
+  title       String
+  price       Decimal       @db.Decimal(10, 2)
+  description String?
+  images      String[]
+  categories  String[]
+  status      ProductStatus @default(DRAFT)
+
+  // Snapshot for feed display without calling auth-service.
+  // Source of truth lives in auth-service; refreshed on update.
+  sellerId   String
+  sellerName String @default("Silver seller")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sellerId])
+  @@index([status, createdAt])
+}

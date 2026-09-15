@@ -4,6 +4,7 @@ import {
   MessageCircle,
   Package,
   ReceiptText,
+  ShoppingBag,
   Store,
   User,
 } from "lucide-react-native";
@@ -11,7 +12,7 @@ import {
 export type MarketplaceMode = "buyer" | "seller";
 
 export type BuyerTabId = "home" | "categories" | "orders" | "profile";
-export type SellerTabId = "home" | "orders" | "messages" | "profile";
+export type SellerTabId = "products" | "orders" | "messages" | "profile";
 /** `sell` is opened via the center button (not a bar tab) in both modes. */
 export type MarketTabId = BuyerTabId | SellerTabId | "sell";
 
@@ -29,7 +30,7 @@ export const BUYER_TABS: MarketTab[] = [
 ];
 
 export const SELLER_TABS: MarketTab[] = [
-  { id: "home", label: "Home", icon: Store },
+  { id: "products", label: "Products", icon: ShoppingBag },
   { id: "orders", label: "Orders", icon: Package },
   { id: "messages", label: "Messages", icon: MessageCircle },
   { id: "profile", label: "Profile", icon: User },

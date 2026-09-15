@@ -10,6 +10,7 @@ import { MarketTabBar } from "./market-tab-bar";
 import { CategoriesTab } from "./tabs/categories-tab";
 import { HomeTab } from "./tabs/home-tab";
 import { MessagesTab } from "./tabs/messages-tab";
+import { MyProductsTab } from "./tabs/my-products-tab";
 import { OrdersTab } from "./tabs/orders-tab";
 import { ProfileTab } from "./tabs/profile-tab";
 import { SellTab } from "./tabs/sell-tab";
@@ -19,7 +20,7 @@ import { SellTab } from "./tabs/sell-tab";
  *  - guest     → auth flow (welcome / login / register);
  *  - logged in → SILVER marketplace with a mode-based TabBar:
  *      buyer  → Home / Categories / [Sell] / Orders / Profile
- *      seller → Home / Orders / [Sell] / Messages / Profile
+ *      seller → Products / Orders / [Sell] / Messages / Profile (no Home)
  * The center Sell button opens the Sell screen in both modes
  * (a buyer tapping it becomes a seller).
  */
@@ -35,17 +36,20 @@ export function MarketplaceHomeScreen(): React.JSX.Element {
 
 function MarketplaceTabs(): React.JSX.Element {
   const mode = useAppStore((s) => s.mode);
-  const setMode = useAppStore((s) => s.setMode);
   const tabs = tabsForMode(mode);
   const [activeTab, setActiveTab] = useState<MarketTabId>("home");
 
-  // If the mode switches to one without the current tab, fall back home.
-  // `sell` content is valid in both modes (opened via the center button).
+  // Seller has no Home — its entry tab is Products.
+  const defaultTab: MarketTabId = mode === "seller" ? "products" : "home";
+
+  // If the mode switches to one without the current tab, fall back
+  // to the mode entry tab. `sell` is valid in both modes (center button).
   const effectiveTab =
-    activeTab === "sell" || tabs.some((t) => t.id === activeTab) ? activeTab : "home";
+    activeTab === "sell" || tabs.some((t) => t.id === activeTab)
+      ? activeTab
+      : defaultTab;
 
   const handleSellPress = () => {
-    if (mode === "buyer") setMode("seller");
     setActiveTab("sell");
   };
 
@@ -59,6 +63,9 @@ function MarketplaceTabs(): React.JSX.Element {
       >
         {effectiveTab === "home" ? <HomeTab /> : null}
         {effectiveTab === "categories" ? <CategoriesTab /> : null}
+        {effectiveTab === "products" ? (
+          <MyProductsTab onAdd={() => setActiveTab("sell")} />
+        ) : null}
         {effectiveTab === "orders" ? <OrdersTab /> : null}
         {effectiveTab === "sell" ? <SellTab /> : null}
         {effectiveTab === "messages" ? <MessagesTab /> : null}
@@ -68,6 +75,7 @@ function MarketplaceTabs(): React.JSX.Element {
         tabs={tabs}
         activeTab={effectiveTab}
         isSellActive={effectiveTab === "sell"}
+        showSellButton={mode === "seller"}
         onTabPress={setActiveTab}
         onSellPress={handleSellPress}
       />

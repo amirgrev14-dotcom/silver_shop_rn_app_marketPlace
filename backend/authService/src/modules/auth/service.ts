@@ -11,7 +11,7 @@ import { prisma } from "../../lib/prisma.js";
 
 export class AuthService {
 
-  private createTokens(user: {id: string, email: string}) {
+  private createTokens(user: {id: string, email: string, name?: string, role?: string}) {
     const accessToken = this.tokenService.signAccessToken(user);
     const refreshToken = this.tokenService.signRefreshToken(user);
 
@@ -52,7 +52,9 @@ export class AuthService {
     // Access and refresh tokens
     const tokens = this.createTokens({
       id: user.id,
-      email: user.email
+      email: user.email,
+      name: user.name,
+      role: user.role,
     })
 
     const { password, ...safeUser} = user;
@@ -83,7 +85,9 @@ export class AuthService {
 
    const tokens = this.createTokens({
     id: user.id,
-    email: user.email
+    email: user.email,
+    name: user.name,
+    role: user.role,
    })
    
     const { password, ...safeUser} = user;
@@ -125,15 +129,27 @@ async refresh(refreshToken: string) {
   // verify refresh token and get payload id, email
   const payload = this.tokenService.verifyRefreshToken(refreshToken)
 
+  // Re-read the user so rotated tokens carry fresh name/role claims
+  // (e.g. a role granted after the old token was issued).
+  const user = await prisma.user.findUnique({ where: { id: payload.id } });
+
+  if (!user) {
+    throw new AppError(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
+  }
+
   // rotate: issue a fresh pair so a leaked refresh token has a short window
   const accessToken = this.tokenService.signAccessToken({
-    id: payload.id,
-    email: payload.email
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
   })
 
   const newRefreshToken = this.tokenService.signRefreshToken({
-    id: payload.id,
-    email: payload.email
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
   })
 
   return {

@@ -4,6 +4,10 @@ import { AppError, HttpStatus } from "../../common/AppError.js";
 interface JwtPayload {
   id: string;
   email: string;
+  // Optional: tokens issued before role/name claims still verify.
+  // Other services MUST treat a missing role as unauthorized.
+  name?: string;
+  role?: string;
 }
 
 export type AccessPayload = JwtPayload & { type?: "access" };

@@ -6,12 +6,16 @@ declare module "@fastify/jwt" {
       id: string;
       email: string;
       type?: "access" | "refresh";
+      name?: string;
+      role?: string;
     };
 
     user: {
       id: string;
       email: string;
       type?: "access" | "refresh";
+      name?: string;
+      role?: string;
     }
   }
 }

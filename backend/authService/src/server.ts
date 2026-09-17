@@ -1,6 +1,6 @@
+import "./config/env.js";
 import fastify from "fastify";
 import cors from "@fastify/cors"
-import "dotenv/config";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 // routes
 import { authRoutes } from "./modules/auth/routes.js";

@@ -1,7 +1,7 @@
+import "./config/env.js";
 import fastify from "fastify";
 import cors from "@fastify/cors";
 import { fastifyJwt } from "@fastify/jwt";
-import "dotenv/config";
 
 import { productRoutes } from "./modules/product/routes.js";
 

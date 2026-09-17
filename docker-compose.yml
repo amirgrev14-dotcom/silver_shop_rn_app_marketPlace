@@ -6,10 +6,14 @@
 # Один Postgres (silver_postgres, база silver_shop_auth) на оба сервиса.
 # Два compose-файла создали бы два volume и две РАЗНЫЕ базы.
 # Один файл = одна база = auth и product видят одни и те же данные.
+#
+# Про volume — важно, проверено на практике:
+# - backend_postgres_data — это база CRM-проекта (crm_db), НЕ наша.
+#   Подключать её сюда нельзя: нашей базы там нет, оба сервиса упадут.
+# - Наши данные живут в управляемом volume postgres_data ниже.
 name: silver-shop
 
 services:
-  # Единственный Postgres на оба сервиса — одна база silver_shop_auth.
   postgres:
     image: postgres:17
     container_name: silver_postgres
@@ -34,6 +38,7 @@ services:
       dockerfile: Dockerfile
     image: silver-shop:latest
     env_file:
+      - ./backend/.env
       - ./backend/authService/.env
     environment:
       SERVICE: auth-service
@@ -53,6 +58,7 @@ services:
       dockerfile: Dockerfile
     image: silver-shop:latest
     env_file:
+      - ./backend/.env
       - ./backend/productService/.env
     environment:
       SERVICE: product-service

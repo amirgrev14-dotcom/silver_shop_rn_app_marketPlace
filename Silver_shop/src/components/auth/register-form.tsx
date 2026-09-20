@@ -1,11 +1,10 @@
-import { ArrowLeft, Eye, EyeOff, LockKeyhole, LockKeyholeOpen, LockKeyholeOpenIcon, ShoppingBag, Store } from "lucide-react-native";
+import { ArrowLeft, LockKeyhole, LockKeyholeOpenIcon, ShoppingBag, Store } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { register as registerUser } from "@/features/auth/services/auth-service";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useAppStore } from "@/stores/app-store";
@@ -20,6 +19,7 @@ import {
   type RegisterFormInput,
 } from "@/features/auth/schemas/auth.schema";
 import { getPostAuthDestination, roleToMode } from "@/features/auth/lib/post-auth";
+import { useAuthSubmit } from "@/features/auth/lib/use-auth-submit";
 
 interface RegisterFormProps {
   onBack: () => void;
@@ -33,15 +33,12 @@ export function RegisterForm({
   onRequireVerification,
 }: RegisterFormProps): React.JSX.Element {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const { isSubmitting, serverError, isNavigating, submit, navigate } = useAuthSubmit();
 
- const {
+  const {
     control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormInput>({
     resolver: zodResolver(registerSchema),
@@ -60,21 +57,8 @@ export function RegisterForm({
     { role: "seller", title: "Seller", subtitle: "I want to sell silver", icon: Store },
   ] as const;
 
-  const name = watch("name")
-  const email = watch("email")
-  const password = watch("password")
-
-  const handleNavigate = (navigate: () => void) => {
-    if (isNavigating) return;
-    setIsNavigating(true);
-    setTimeout(() => navigate(), 400);
-  };
-
-  const onSubmit = async (data: RegisterFormInput) => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    setServerError(null);
-    try {
+  const onSubmit = (data: RegisterFormInput) =>
+    submit(async () => {
       const authResponse = await registerUser(data);
 
       // Tab mode follows the DB role (source of truth), not the local pick.
@@ -103,19 +87,12 @@ export function RegisterForm({
         return;
       }
 
-    //  handleNavigate(onHome);
-
      // Reset the form
       setValue("email", "");
       setValue("password", "");
       setValue("confirmPassword", "");
       setValue("name", "");
-    } catch (err: unknown) {
-      setServerError(err instanceof Error ? err.message : "Registration failed");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    }, "Registration failed");
 
   return (
     <SafeAreaView className="flex-1 bg-app" edges={["top", "bottom"]}>
@@ -327,7 +304,7 @@ export function RegisterForm({
               <AppTextLink
                 linkClassName="text-[15px] font-bold"
                 label="Already have an account?"
-                onPress={() => handleNavigate(onLogin)}
+                onPress={() => navigate(onLogin)}
                 linkLabel="Sign in"
               />
             </View>

@@ -61,8 +61,13 @@ httpClient.interceptors.response.use(
     const originalRequest = error.config;
 
     if (__DEV__ && error.response) {
+      const rawUrl: string = originalRequest?.url ?? '';
+      // Absolute URLs already contain the host — don't glue baseURL in front.
+      const displayUrl = rawUrl.startsWith('http')
+        ? rawUrl
+        : `${originalRequest?.baseURL ?? ''}${rawUrl}`;
       console.log(
-        `[httpClient] ${error.response.status} ${originalRequest?.method?.toUpperCase()} ${originalRequest?.baseURL ?? ''}${originalRequest?.url ?? ''} →`,
+        `[httpClient] ${error.response.status} ${originalRequest?.method?.toUpperCase()} ${displayUrl} →`,
         JSON.stringify(error.response.data)?.slice(0, 300)
       );
     }

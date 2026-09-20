@@ -1,7 +1,8 @@
-import { ScrollView, Text } from "react-native";
+import {ScrollView} from "react-native";
 
+import { AppText } from "@/components/ui/app-text";
 import { AppButton } from "@/components/ui/app-button";
-import { AppCard } from "@/components/ui/app-card";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 
 interface MyProductsTabProps {
   onAdd: () => void;
@@ -14,18 +15,14 @@ export function MyProductsTab({ onAdd }: MyProductsTabProps): React.JSX.Element 
       contentContainerClassName="gap-4 px-5 pb-6 pt-6"
       showsVerticalScrollIndicator={false}
     >
-      <Text className="text-2xl font-bold tracking-tight text-text-primary">
+      <AppText className="text-2xl font-bold tracking-tight text-text-primary">
         My products
-      </Text>
+      </AppText>
 
-      <AppCard>
-        <Text className="text-base font-semibold text-text-primary">
-          No products yet
-        </Text>
-        <Text className="mt-1 text-sm leading-5 text-text-secondary">
-          Add your first silver piece — buyers will see it on the marketplace.
-        </Text>
-      </AppCard>
+      <EmptyStateCard
+        title="No products yet"
+        description="Add your first silver piece — buyers will see it on the marketplace."
+      />
 
       <AppButton onPress={onAdd}>Add product</AppButton>
     </ScrollView>

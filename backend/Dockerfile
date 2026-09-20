@@ -19,6 +19,10 @@ RUN npm ci --prefix authService --no-audit --no-fund \
 FROM install AS build
 COPY authService ./authService
 COPY productService ./productService
+# prisma generate only loads the config (never connects), but the config
+# throws without *some* DATABASE_URL — a dummy is enough at build time.
+# Real URL comes from env_file / environment at container start.
+ARG DATABASE_URL="postgresql://build@localhost:5432/build"
 RUN sh -c "cd authService && npx prisma generate && npx tsc" \
  && sh -c "cd productService && npx prisma generate && npx tsc"
 

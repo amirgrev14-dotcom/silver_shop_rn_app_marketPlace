@@ -1,6 +1,7 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import {Pressable, View} from "react-native";
 
+import { AppText } from "@/components/ui/app-text";
 interface Props {
   onPress?: () => void;
   className?: string;
@@ -21,7 +22,7 @@ export function AppTextLink({
   return (
     <View className={`flex-row items-center gap-2 ${className ?? ""}`}>
       {label && (
-        <Text className={`text-gray-500 ${labelClassName ?? ""}`}>{label}</Text>
+        <AppText className={`text-gray-500 ${labelClassName ?? ""}`}>{label}</AppText>
       )}
 
       <Pressable
@@ -30,9 +31,9 @@ export function AppTextLink({
         onPress={onPress}
         className="py-1 active:opacity-60"
       >
-        <Text className={`font-semibold text-primary ${linkClassName ?? ""}`}>
+        <AppText className={`font-semibold text-primary ${linkClassName ?? ""}`}>
           {linkLabel}
-        </Text>
+        </AppText>
       </Pressable>
     </View>
   );

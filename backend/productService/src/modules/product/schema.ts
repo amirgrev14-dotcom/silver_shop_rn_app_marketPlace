@@ -8,6 +8,15 @@ export const PRODUCT_CATEGORIES = [
   "Tableware",
   "Decor",
   "Vintage",
+  // Marketplace grid subcategories, chosen in the Sell form.
+  // Stored as-is so category screens filter exact matches.
+  "Rings",
+  "Necklaces",
+  "Bracelets",
+  "Earrings",
+  "Anklets",
+  "Other Items",
+  "Others",
 ] as const;
 
 const priceSchema = zod

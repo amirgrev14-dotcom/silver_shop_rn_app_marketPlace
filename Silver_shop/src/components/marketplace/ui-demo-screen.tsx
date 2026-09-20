@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import {ScrollView, View} from "react-native";
+import { AppText } from "@/components/ui/app-text";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton } from "@/components/ui/app-button";
@@ -31,15 +32,15 @@ export function UiDemoScreen(): React.JSX.Element {
         showsVerticalScrollIndicator={false}
       >
         <View>
-          <Text className="text-3xl font-bold tracking-tight text-text-primary">
+          <AppText className="text-3xl font-bold tracking-tight text-text-primary">
             SLIVER
-          </Text>
-          <Text className="mt-1 text-sm font-semibold tracking-[2px] text-primary">
+          </AppText>
+          <AppText className="mt-1 text-sm font-semibold tracking-[2px] text-primary">
             UI COMPONENTS
-          </Text>
-          <Text className="mt-3 text-base leading-6 text-text-secondary">
+          </AppText>
+          <AppText className="mt-3 text-base leading-6 text-text-secondary">
             A light, premium foundation for buying and selling silver items.
-          </Text>
+          </AppText>
         </View>
 
         <DemoSection title="COLORS">
@@ -50,9 +51,9 @@ export function UiDemoScreen(): React.JSX.Element {
                   style={{ backgroundColor: color }}
                   className="h-14 rounded-[14px] border border-border-light"
                 />
-                <Text numberOfLines={1} className="text-xs text-text-secondary">
+                <AppText numberOfLines={1} className="text-xs text-text-secondary">
                   {name}
-                </Text>
+                </AppText>
               </View>
             ))}
           </View>
@@ -106,24 +107,24 @@ export function UiDemoScreen(): React.JSX.Element {
 
         <DemoSection title="CARDS">
           <AppCard>
-            <Text className="text-lg font-semibold text-text-primary">
+            <AppText className="text-lg font-semibold text-text-primary">
               Simple and considered
-            </Text>
-            <Text className="mt-2 text-base leading-6 text-text-secondary">
+            </AppText>
+            <AppText className="mt-2 text-base leading-6 text-text-secondary">
               Reusable cards keep future Sliver screens airy, clear and
               comfortably spaced.
-            </Text>
+            </AppText>
           </AppCard>
         </DemoSection>
 
         <AppCard variant="ghost">
-          <Text className="text-lg bg-transparent font-semibold text-text-primary">
+          <AppText className="text-lg bg-transparent font-semibold text-text-primary">
             Simple and considered
-          </Text>
-          <Text className="mt-2 text-base bg-transparent leading-6 text-text-secondary">
+          </AppText>
+          <AppText className="mt-2 text-base bg-transparent leading-6 text-text-secondary">
             Reusable cards keep future Sliver screens airy, clear and
             comfortably spaced.
-          </Text>
+          </AppText>
         </AppCard>
 
         <DemoSection title="PRODUCT CARD">
@@ -182,9 +183,9 @@ function DemoSection({
 }): React.JSX.Element {
   return (
     <View className="gap-4">
-      <Text className="text-xs font-bold tracking-[1.6px]  text-text-secondary">
+      <AppText className="text-xs font-bold tracking-[1.6px]  text-text-secondary">
         {title}
-      </Text>
+      </AppText>
       {children}
     </View>
   );

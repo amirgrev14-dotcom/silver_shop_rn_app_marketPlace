@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react-native";
-import { Pressable, Text, View } from "react-native";
+import {Pressable, View} from "react-native";
+import { AppText } from "@/components/ui/app-text";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppIcon } from "@/components/ui/app-icon";
@@ -47,13 +48,13 @@ export function MarketTabBar({
             color={isActive ? "primary" : "muted"}
           />
         </View>
-        <Text
+        <AppText
           className={`text-[11px] font-semibold ${
             isActive ? "text-primary" : "text-text-muted"
           }`}
         >
           {tab.label}
-        </Text>
+        </AppText>
       </Pressable>
     );
   };
@@ -81,13 +82,13 @@ export function MarketTabBar({
               <View className="h-14 w-14 items-center justify-center rounded-full bg-primary">
                 <AppIcon icon={Plus} size={27} strokeWidth={2.4} color="white" />
               </View>
-              <Text
+              <AppText
                 className={`text-[11px] font-bold ${
                   isSellActive ? "text-primary" : "text-text-muted"
                 }`}
               >
                 Sell
-              </Text>
+              </AppText>
             </Pressable>
           </View>
         ) : null}

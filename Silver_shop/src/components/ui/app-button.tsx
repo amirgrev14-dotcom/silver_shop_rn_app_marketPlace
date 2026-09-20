@@ -1,7 +1,7 @@
+import { AppText } from "@/components/ui/app-text";
 import {
   ActivityIndicator,
   Pressable,
-  Text,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
@@ -61,9 +61,9 @@ export function AppButton({
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? colors.surface : colors.primary} />
       ) : (
-        <Text style={textStyle} className={`text-base font-semibold ${textVariantClasses[variant]}`}>
+        <AppText style={textStyle} className={`text-base font-semibold ${textVariantClasses[variant]}`}>
           {children}
-        </Text>
+        </AppText>
       )}
     </Pressable>
   );

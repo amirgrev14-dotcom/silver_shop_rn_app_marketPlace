@@ -1,11 +1,10 @@
-import { ArrowLeft, Eye, EyeOff, LockKeyhole, LockKeyholeIcon, LockKeyholeOpen, LockKeyholeOpenIcon } from "lucide-react-native";
+import { ArrowLeft, LockKeyhole, LockKeyholeOpenIcon } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { login } from "@/features/auth/services/auth-service";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useAppStore } from "@/stores/app-store";
@@ -20,6 +19,7 @@ import {
   type LoginFormData,
 } from "@/features/auth/schemas/auth.schema";
 import { getPostAuthDestination, roleToMode } from "@/features/auth/lib/post-auth";
+import { useAuthSubmit } from "@/features/auth/lib/use-auth-submit";
 
 interface LoginFormProps {
   onBack: () => void;
@@ -33,15 +33,12 @@ export function LoginForm({
   onRequireVerification,
 }: LoginFormProps): React.JSX.Element {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const { isSubmitting, serverError, isNavigating, submit, navigate } = useAuthSubmit();
 
    const {
       control,
       handleSubmit,
       setValue,
-      watch,
       formState: { errors },
     } = useForm<LoginFormData>({
       resolver: zodResolver(loginSchema),
@@ -53,20 +50,8 @@ export function LoginForm({
     });
   
 
-  const email = watch("email")
-  const password = watch("password")
-
-  const handleNavigate = (navigate: () => void) => {
-    if (isNavigating) return;
-    setIsNavigating(true);
-    setTimeout(() => navigate(), 400);
-  };
-
-  const onSubmit = async (data: LoginFormData) => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    setServerError(null);
-    try {
+  const onSubmit = (data: LoginFormData) =>
+    submit(async () => {
       const authResponse = await login(data);
 
       // Tab mode follows the DB role (source of truth).
@@ -94,15 +79,9 @@ export function LoginForm({
         return;
       }
 
-      // handleNavigate(onHome)\;
       setValue("email", "");
       setValue("password", "");
-    } catch (err: unknown) {
-      setServerError(err instanceof Error ? err.message : "Login failed");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    }, "Login failed");
 
   return (
     <SafeAreaView className="flex-1 bg-app" edges={["top", "bottom"]}>
@@ -206,7 +185,7 @@ export function LoginForm({
               <AppTextLink
                 linkClassName="text-[15px] font-bold"
                 label="Don't have an account?"
-                onPress={() => handleNavigate(onRegister)}
+                onPress={() => navigate(onRegister)}
                 linkLabel="Sign up"
               />
             </View>

@@ -1,14 +1,14 @@
 export const colors = {
-  background: '#F7F7F8',
+  background: '#F8F8FB',
   surface: '#FFFFFF',
-  primary: '#5145B8',
-  primaryDark: '#43389C',
+  primary: '#5B43D6',
+  primaryDark: '#4A35B8',
   primaryLight: '#EEEAFE',
-  textPrimary: '#1F1F29',
-  textSecondary: '#777782',
+  textPrimary: '#171722',
+  textSecondary: '#6F6E7A',
   textMuted: '#A0A0AA',
-  border: '#E5E5EA',
-  borderLight: '#EFEFF2',
+  border: '#E8E7ED',
+  borderLight: '#F0EFF4',
   silver: '#C8C8CC',
   silverLight: '#F1F1F3',
   success: '#34A853',
@@ -24,4 +24,13 @@ export const shadows = {
     shadowOpacity: 0.04,
     shadowRadius: 8,
   },
+} as const;
+
+/** Loaded Inter families (see app/_layout useFonts). Used by AppText. */
+export const fontFamilies = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+  extrabold: 'Inter_800ExtraBold',
 } as const;

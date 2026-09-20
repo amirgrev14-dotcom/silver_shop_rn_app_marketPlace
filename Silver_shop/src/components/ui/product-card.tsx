@@ -1,16 +1,8 @@
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import {
-  Image,
-  Pressable,
-  Text,
-  View,
-  type GestureResponderEvent,
-  type ImageSourcePropType,
-} from "react-native";
+import {Image, Pressable, View, type GestureResponderEvent, type ImageSourcePropType, } from "react-native";
 
+import { AppText } from "@/components/ui/app-text";
 import { AppCard } from "./app-card";
-import { IconButton } from "./icon-button";
-import { colors } from "./theme";
+import { FavoriteButton } from "./favorite-button";
 
 interface ProductCardProps {
   imageSource: ImageSourcePropType;
@@ -20,6 +12,10 @@ interface ProductCardProps {
   isFavorite?: boolean;
   onPress?: () => void;
   onFavoritePress?: () => void;
+  className?: string;
+  imageClassName?: string;
+  /** vertical = image on top (grid), horizontal = image left, info right (wide feed). */
+  layout?: "vertical" | "horizontal";
 }
 
 export function ProductCard({
@@ -30,20 +26,63 @@ export function ProductCard({
   isFavorite = false,
   onPress,
   onFavoritePress,
+  className,
+  imageClassName = "h-40",
+  layout = "vertical",
 }: ProductCardProps): React.JSX.Element {
   const handleFavoritePress = (event: GestureResponderEvent): void => {
     event.stopPropagation();
     onFavoritePress?.();
   };
 
+  if (layout === "horizontal") {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        className={className ?? "w-full"}
+      >
+        <AppCard className="flex-row items-center gap-3 p-3">
+          <View className="h-[104px] w-[104px] overflow-hidden rounded-[14px] bg-silver-light">
+            <Image
+              source={imageSource}
+              resizeMode="cover"
+              className="h-full w-full"
+            />
+          </View>
+          <View className="flex-1 gap-1 py-1">
+            <AppText
+              numberOfLines={1}
+              className="text-base font-semibold text-text-primary"
+            >
+              {title}
+            </AppText>
+            {subtitle ? (
+              <AppText
+                numberOfLines={1}
+                className="text-sm text-text-secondary"
+              >
+                {subtitle}
+              </AppText>
+            ) : null}
+            <AppText className="mt-1 text-lg font-bold text-primary">{price}</AppText>
+          </View>
+          <View className="self-start">
+            <FavoriteButton isFavorite={isFavorite} onPress={handleFavoritePress} />
+          </View>
+        </AppCard>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      className="w-[210px]"
+      className={className ?? "w-[210px]"}
     >
       <AppCard className="py-0 px-0">
-        <View className="relative h-40 overflow-hidden rounded-t-[14px] bg-silver-light">
+        <View className={`relative overflow-hidden rounded-t-[14px] bg-silver-light ${imageClassName}`}>
           <Image
             source={imageSource}
             resizeMode="cover"
@@ -51,46 +90,31 @@ export function ProductCard({
           />
 
           <View className="absolute right-2 top-2">
-            <IconButton
-              active={isFavorite}
-              accessibilityLabel={
-                isFavorite ? "Remove from favorites" : "Add to favorites"
-              }
-              customIcon={
-                <MaterialCommunityIcons
-                  name={isFavorite ? "heart" : "heart-outline"}
-                  size={24}
-                  color={isFavorite ? colors.primary : colors.textSecondary}
-                />
-              }
-              onPress={handleFavoritePress}
-              style={{ backgroundColor: colors.surface }}
-              className="size-10 border-0"
-            />
+            <FavoriteButton isFavorite={isFavorite} onPress={handleFavoritePress} />
           </View>
         </View>
         {/* INFO */}
         <View className="px-3 pt-2 pb-3">
           <View className="flex-row items-start justify-between gap-2">
             <View className="flex-1">
-              <Text
+              <AppText
                 numberOfLines={1}
                 className="text-base font-semibold text-text-primary"
               >
                 {title}
-              </Text>
+              </AppText>
 
               {subtitle ? (
-                <Text
+                <AppText
                   numberOfLines={1}
                   className="mt-1 text-sm text-text-secondary"
                 >
                   {subtitle}
-                </Text>
+                </AppText>
               ) : null}
             </View>
           </View>
-          <Text className="mt-3 text-xl font-bold text-primary">{price}</Text>
+          <AppText className="mt-3 text-xl font-bold text-primary">{price}</AppText>
         </View>
       </AppCard>
     </Pressable>

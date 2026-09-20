@@ -1,6 +1,6 @@
+import { AppText } from "@/components/ui/app-text";
 import { type ReactNode, useState } from 'react';
 import {
-  Text,
   TextInput,
   View,
   type StyleProp,
@@ -35,9 +35,9 @@ export function AppInput({
 
   return (
     <View style={containerStyle} className="gap-2">
-      {label ? <Text className="text-sm font-medium text-text-primary">{label}</Text> : null}
+      {label ? <AppText className="text-sm font-medium text-text-primary">{label}</AppText> : null}
       <View
-        className={`h-[52px] flex-row items-center rounded-[14px] border bg-surface px-4 ${borderClass} ${
+        className={`${inputProps.multiline ? "min-h-[52px] py-3" : "h-[52px]"} flex-row items-center rounded-[14px] border bg-surface px-4 ${borderClass} ${
           editable ? '' : 'bg-silver-light opacity-60'
         }`}
       >
@@ -59,7 +59,7 @@ export function AppInput({
         />
         {rightIcon ? <View className="ml-3">{rightIcon}</View> : null}
       </View>
-      {error ? <Text className="text-sm text-error">{error}</Text> : null}
+      {error ? <AppText className="text-sm text-error">{error}</AppText> : null}
     </View>
   );
 }

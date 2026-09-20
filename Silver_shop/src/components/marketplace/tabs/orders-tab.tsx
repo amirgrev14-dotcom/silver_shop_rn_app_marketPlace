@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import {Pressable, ScrollView, View} from "react-native";
 
-import { AppCard } from "@/components/ui/app-card";
+import { AppText } from "@/components/ui/app-text";
+import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { useAppStore } from "@/stores/app-store";
 
 const SELLER_STAGES = ["New", "In progress", "Completed"] as const;
@@ -24,9 +25,9 @@ export function OrdersTab(): React.JSX.Element {
       contentContainerClassName="gap-4 px-5 pb-6 pt-6"
       showsVerticalScrollIndicator={false}
     >
-      <Text className="text-2xl font-bold tracking-tight text-text-primary">
+      <AppText className="text-2xl font-bold tracking-tight text-text-primary">
         {isSeller ? "Orders to fulfil" : "My orders"}
-      </Text>
+      </AppText>
 
       <View className="flex-row gap-2">
         {stages.map((name) => {
@@ -39,28 +40,26 @@ export function OrdersTab(): React.JSX.Element {
                 isActive ? "bg-primary" : "bg-silver-light"
               }`}
             >
-              <Text
+              <AppText
                 className={`text-sm font-semibold ${
                   isActive ? "text-white" : "text-text-secondary"
                 }`}
               >
                 {name}
-              </Text>
+              </AppText>
             </Pressable>
           );
         })}
       </View>
 
-      <AppCard>
-        <Text className="text-base font-semibold text-text-primary">
-          {isSeller ? `No ${stage.toLowerCase()} orders` : `No ${stage.toLowerCase()} purchases`}
-        </Text>
-        <Text className="mt-1 text-sm leading-5 text-text-secondary">
-          {isSeller
+      <EmptyStateCard
+        title={isSeller ? `No ${stage.toLowerCase()} orders` : `No ${stage.toLowerCase()} purchases`}
+        description={
+          isSeller
             ? "New orders from buyers will appear here — accept, prepare and ship them step by step."
-            : "Your purchases will appear here — track delivery and confirm receipt."}
-        </Text>
-      </AppCard>
+            : "Your purchases will appear here — track delivery and confirm receipt."
+        }
+      />
     </ScrollView>
   );
 }

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { CURRENCY_CODES, DEFAULT_CURRENCY } from '@/features/marketplace/currency';
+import { parsePriceInput } from '../lib/price';
 import { uiCategorySchema } from './categories.schema';
 
 /**
@@ -31,14 +33,19 @@ export const sellFormSchema = z.object({
     .string()
     .trim()
     .min(1, 'Enter a valid price greater than 0.')
-    .refine((value) => {
-      const amount = Number(value.replace(',', '.'));
-      return Number.isFinite(amount) && amount > 0;
-    }, 'Enter a valid price greater than 0.'),
+    .refine(
+      (value) => parsePriceInput(value) !== null,
+      'Enter a valid price greater than 0.'
+    ),
 
   description: z
     .string()
     .max(500, 'Description must be at most 500 characters.'),
+
+  currency: z.enum(CURRENCY_CODES).default(DEFAULT_CURRENCY),
 });
 
 export type SellFormData = z.infer<typeof sellFormSchema>;
+
+/** Form input: `currency` has a default, so on input it may be absent. */
+export type SellFormInput = z.input<typeof sellFormSchema>;

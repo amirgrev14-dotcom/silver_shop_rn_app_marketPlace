@@ -4,8 +4,12 @@ export const colors = {
   primary: '#5B43D6',
   primaryDark: '#4A35B8',
   primaryLight: '#EEEAFE',
+  /** Muted violet for the brand-letter accent — softer than primary. */
+  primaryMuted: '#6E63B8',
   textPrimary: '#171722',
   textSecondary: '#6F6E7A',
+  /** Dark violet-gray for titles — like gray, but not gray. */
+  inkSoft: '#57536B',
   textMuted: '#A0A0AA',
   border: '#E8E7ED',
   borderLight: '#F0EFF4',

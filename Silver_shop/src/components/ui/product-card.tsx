@@ -1,8 +1,9 @@
-import {Image, Pressable, View, type GestureResponderEvent, type ImageSourcePropType, } from "react-native";
+import {Pressable, View, type GestureResponderEvent, type ImageSourcePropType, } from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
 import { AppCard } from "./app-card";
 import { FavoriteButton } from "./favorite-button";
+import { LoadingImage } from "./loading-image";
 
 interface ProductCardProps {
   imageSource: ImageSourcePropType;
@@ -44,10 +45,9 @@ export function ProductCard({
       >
         <AppCard className="flex-row items-center gap-3 p-3">
           <View className="h-[104px] w-[104px] overflow-hidden rounded-[14px] bg-silver-light">
-            <Image
+            <LoadingImage
               source={imageSource}
-              resizeMode="cover"
-              className="h-full w-full"
+              style={{ width: "100%", height: "100%" }}
             />
           </View>
           <View className="flex-1 gap-1 py-1">
@@ -83,10 +83,9 @@ export function ProductCard({
     >
       <AppCard className="py-0 px-0">
         <View className={`relative overflow-hidden rounded-t-[14px] bg-silver-light ${imageClassName}`}>
-          <Image
+          <LoadingImage
             source={imageSource}
-            resizeMode="cover"
-            className="h-full w-full"
+            style={{ width: "100%", height: "100%" }}
           />
 
           <View className="absolute right-2 top-2">

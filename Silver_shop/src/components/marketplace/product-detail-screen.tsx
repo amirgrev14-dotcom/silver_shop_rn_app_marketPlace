@@ -9,6 +9,7 @@ import { AppText } from "@/components/ui/app-text";
 import { CircleIconButton } from "@/components/ui/circle-icon-button";
 import { EdgeFade } from "@/components/ui/edge-fade";
 import { FavoriteButton } from "@/components/ui/favorite-button";
+import { LoadingImage } from "@/components/ui/loading-image";
 import { PhotoViewer } from "@/components/ui/photo-viewer";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { formatPrice } from "@/features/marketplace/mock-data";
@@ -46,11 +47,13 @@ export function ProductDetailScreen({
   const { width: screenWidth } = useWindowDimensions();
   const mainSize = Math.min(screenWidth - 40, 260);
 
+  const priceLabel = formatPrice(product.price, product.currency);
+
   const handleShare = async () => {
     try {
       await Share.share({
         title: product.title,
-        message: `${product.title} — ${formatPrice(product.price)}`,
+        message: `${product.title} — ${formatPrice(product.price, product.currency)}`,
       });
     } catch {
       // Sharing unavailable — stay on the page.
@@ -62,6 +65,7 @@ export function ProductDetailScreen({
       <ScreenHeader
         title="Product Detail"
         titleAlign="left"
+        accentFirstLetter
         className="bg-surface px-5 py-2"
         left={
           <CircleIconButton
@@ -93,10 +97,9 @@ export function ProductDetailScreen({
               onPress={() => setViewerIndex(activePhoto)}
               className="self-center active:opacity-90"
             >
-              <Image
+              <LoadingImage
                 source={{ uri: gallery[Math.min(activePhoto, gallery.length - 1)] }}
                 style={{ width: mainSize, height: mainSize, borderRadius: 20 }}
-                contentFit="cover"
               />
             </Pressable>
           ) : (
@@ -117,10 +120,9 @@ export function ProductDetailScreen({
                     index === activePhoto ? "border-primary" : "border-transparent"
                   }`}
                 >
-                  <Image
+                  <LoadingImage
                     source={{ uri }}
                     style={{ width: "100%", height: "100%" }}
-                    contentFit="cover"
                   />
                 </Pressable>
               ))}
@@ -143,14 +145,18 @@ export function ProductDetailScreen({
           ) : null}
         </View>
 
-        {/* Title + price row */}
+        {/* Title + price row (price ellipsized, never breaks layout) */}
         <View className="gap-1">
           <View className="flex-row items-start justify-between gap-3">
             <AppText className="flex-1 text-2xl font-bold text-text-primary">
               {product.title}
             </AppText>
-            <AppText className="text-xl font-bold text-text-primary">
-              {formatPrice(product.price)}
+            <AppText
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              className="max-w-[45%] shrink-0 text-xl font-bold text-text-primary"
+            >
+              {priceLabel}
             </AppText>
           </View>
           {product.categories[0] ? (
@@ -194,27 +200,57 @@ export function ProductDetailScreen({
       <EdgeFade />
       </View>
 
-      {/* Sticky purchase bar — padded above the bottom inset, never overlaps content. */}
+      {/* Sticky purchase bar — padded above the bottom inset, never overlaps content.
+          Huge prices push the buttons under the sum; extreme ones ellipsize. */}
       <View
         style={{ paddingBottom: insets.bottom + 12 }}
         className="border-t border-border bg-surface px-5 pt-3"
       >
-        <View className="flex-row items-center gap-3">
-          <AppText className="shrink-0 text-xl font-bold text-text-primary">
-            {formatPrice(product.price)}
-          </AppText>
-          <AppButton
-            variant="secondary"
-            fullWidth={false}
-            className="flex-1"
-            onPress={() => setAddedToCart((v) => !v)}
-          >
-            {addedToCart ? "In Cart ✓" : "Add to Cart"}
-          </AppButton>
-          <AppButton fullWidth={false} className="flex-1">
-            Buy Now
-          </AppButton>
-        </View>
+        {priceLabel.length > 10 ? (
+          <View className="gap-2.5">
+            <AppText
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              className="text-xl font-bold text-text-primary"
+            >
+              {priceLabel}
+            </AppText>
+            <View className="flex-row gap-3">
+              <AppButton
+                variant="secondary"
+                fullWidth={false}
+                className="flex-1"
+                onPress={() => setAddedToCart((v) => !v)}
+              >
+                {addedToCart ? "In Cart ✓" : "Add to Cart"}
+              </AppButton>
+              <AppButton fullWidth={false} className="flex-1">
+                Buy Now
+              </AppButton>
+            </View>
+          </View>
+        ) : (
+          <View className="flex-row items-center gap-3">
+            <AppText
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              className="shrink-0 text-xl font-bold text-text-primary"
+            >
+              {priceLabel}
+            </AppText>
+            <AppButton
+              variant="secondary"
+              fullWidth={false}
+              className="flex-1"
+              onPress={() => setAddedToCart((v) => !v)}
+            >
+              {addedToCart ? "In Cart ✓" : "Add to Cart"}
+            </AppButton>
+            <AppButton fullWidth={false} className="flex-1">
+              Buy Now
+            </AppButton>
+          </View>
+        )}
       </View>
 
       {/* Fullscreen viewer — remounts on every open for a fresh start page. */}

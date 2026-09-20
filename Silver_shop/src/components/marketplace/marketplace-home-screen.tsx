@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Animated, { SlideInRight } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthEntryScreen } from "@/components/auth/auth-entry-screen";
 import { tabsForMode, type MarketTabId } from "@/features/marketplace/types";
 import type { Product } from "@/features/products/types";
+import { favoritesStorage } from "@/lib/storage/favorites-storage";
 import { useAppStore } from "@/stores/app-store";
 
 import { MarketTabBar } from "./market-tab-bar";
 import { CategoryProductsScreen } from "./category-products-screen";
 import { ProductDetailScreen } from "./product-detail-screen";
+import { SavedScreen } from "./saved-screen";
 import { CategoriesTab } from "./tabs/categories-tab";
 import { HomeTab } from "./tabs/home-tab";
 import { MessagesTab } from "./tabs/messages-tab";
@@ -40,9 +42,26 @@ function MarketplaceTabs(): React.JSX.Element {
   const mode = useAppStore((s) => s.mode);
   const tabs = tabsForMode(mode);
   const [activeTab, setActiveTab] = useState<MarketTabId>("home");
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showSaved, setShowSaved] = useState(false);
+
+  // Favorite ids persist locally (backend has no likes table yet).
+  // The save effect skips the first render so it never wipes
+  // stored ids before the load resolves.
+  const loadedRef = useRef(false);
+  useEffect(() => {
+    favoritesStorage.load().then((ids) => {
+      setFavoriteIds(ids);
+      loadedRef.current = true;
+    });
+  }, []);
+  useEffect(() => {
+    if (loadedRef.current) favoritesStorage.save(favoriteIds);
+  }, [favoriteIds]);
+
+  const favorites = new Set(favoriteIds);
 
   // Seller has no Home — its entry tab is Products.
   const defaultTab: MarketTabId = mode === "seller" ? "products" : "home";
@@ -54,24 +73,25 @@ function MarketplaceTabs(): React.JSX.Element {
       ? activeTab
       : defaultTab;
 
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const toggleFavorite = (product: Product) => {
+    setFavoriteIds((prev) =>
+      prev.includes(product.id)
+        ? prev.filter((id) => id !== product.id)
+        : [...prev, product.id].slice(-100)
+    );
   };
 
   const handleTabPress = (tab: MarketTabId) => {
     setSelectedProduct(null);
     setSelectedCategory(null);
+    setShowSaved(false);
     setActiveTab(tab);
   };
 
   const handleSellPress = () => {
     setSelectedProduct(null);
     setSelectedCategory(null);
+    setShowSaved(false);
     setActiveTab("sell");
   };
 
@@ -82,20 +102,40 @@ function MarketplaceTabs(): React.JSX.Element {
         <ProductDetailScreen
           product={selectedProduct}
           isFavorite={favorites.has(selectedProduct.id)}
-          onToggleFavorite={() => toggleFavorite(selectedProduct.id)}
+          onToggleFavorite={() => toggleFavorite(selectedProduct)}
           onBack={() => setSelectedProduct(null)}
         />
       </SafeAreaView>
     );
   }
 
+  // Saved items open above the tabs (tab bar hidden).
+  if (showSaved) {
+    return (
+      <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
+        <SavedScreen
+          productIds={favoriteIds}
+          onBack={() => setShowSaved(false)}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+          onProductPress={setSelectedProduct}
+          onSyncIds={setFavoriteIds}
+        />
+      </SafeAreaView>
+    );
+  }
+
   // Category listing opens above the tabs (tab bar hidden).
+  // Back goes to the Categories page, not just where you came from.
   if (selectedCategory) {
     return (
       <SafeAreaView className="flex-1 bg-surface" edges={["top"]}>
         <CategoryProductsScreen
           categoryName={selectedCategory}
-          onBack={() => setSelectedCategory(null)}
+          onBack={() => {
+            setSelectedCategory(null);
+            setActiveTab("categories");
+          }}
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
           onProductPress={setSelectedProduct}
@@ -116,6 +156,7 @@ function MarketplaceTabs(): React.JSX.Element {
           <HomeTab
             onSeeAllCategories={() => setActiveTab("categories")}
             onCategoryPress={setSelectedCategory}
+            onShowSaved={() => setShowSaved(true)}
             favorites={favorites}
             onToggleFavorite={toggleFavorite}
             onProductPress={setSelectedProduct}
@@ -133,7 +174,9 @@ function MarketplaceTabs(): React.JSX.Element {
         {effectiveTab === "orders" ? <OrdersTab /> : null}
         {effectiveTab === "sell" ? <SellTab /> : null}
         {effectiveTab === "messages" ? <MessagesTab /> : null}
-        {effectiveTab === "profile" ? <ProfileTab /> : null}
+        {effectiveTab === "profile" ? (
+          <ProfileTab onSavedPress={() => setShowSaved(true)} />
+        ) : null}
       </Animated.View>
       <MarketTabBar
         tabs={tabs}

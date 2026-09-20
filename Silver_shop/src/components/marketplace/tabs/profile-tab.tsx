@@ -38,7 +38,7 @@ const MODE_CARDS: { mode: MarketplaceMode; title: string; subtitle: string; icon
   { mode: "seller", title: "Seller", subtitle: "Sell & chat with buyers", icon: Store },
 ];
 
-export function ProfileTab(): React.JSX.Element {
+export function ProfileTab({ onSavedPress }: { onSavedPress?: () => void }): React.JSX.Element {
   const user = useAppStore((s) => s.user);
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
@@ -61,6 +61,7 @@ export function ProfileTab(): React.JSX.Element {
       <ScreenHeader
         title="Profile"
         titleAlign="left"
+        accentFirstLetter
         titleClassName="text-2xl"
         right={<CircleIconButton icon={Settings} accessibilityLabel="Settings" />}
       />
@@ -103,6 +104,7 @@ export function ProfileTab(): React.JSX.Element {
             key={item.title}
             icon={item.icon}
             title={item.title}
+            onPress={item.title === "Saved Items" ? onSavedPress : undefined}
             showDivider={index < MENU_ITEMS.length - 1}
           />
         ))}

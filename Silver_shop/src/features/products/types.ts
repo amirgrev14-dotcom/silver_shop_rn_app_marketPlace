@@ -13,6 +13,8 @@ export interface Product {
   id: string;
   title: string;
   price: number;
+  /** ISO currency code. Optional until the backend stores it. */
+  currency?: string;
   description: string | null;
   images: string[];
   categories: string[];
@@ -26,6 +28,8 @@ export interface Product {
 export interface CreateProductValues {
   title: string;
   price: number;
+  /** Sent along; backend ignores unknown keys until it supports currency. */
+  currency?: string;
   description?: string;
   images: string[];
   categories: string[];

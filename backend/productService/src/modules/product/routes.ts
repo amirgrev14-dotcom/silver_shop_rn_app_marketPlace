@@ -10,6 +10,8 @@ export const productRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Public feed + details (only ACTIVE/SOLD are listed).
   fastify.get("/", productController.feed);
+  // Static batch route BEFORE "/:id" so "favorites" is never read as an id.
+  fastify.get("/favorites", productController.favorites);
   fastify.get("/:id", productController.getById);
 
   // Sellers only. sellerId comes from the verified JWT, never the body.

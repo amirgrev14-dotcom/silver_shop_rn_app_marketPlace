@@ -58,3 +58,23 @@ export const productQuerySchema = zod.object({
 });
 
 export type ProductQueryDto = zod.infer<typeof productQuerySchema>;
+
+/**
+ * Saved-items lookup: comma-separated ids (?ids=a,b,c), up to 100.
+ * Lets clients fetch favorites by indexed ids instead of paging
+ * the whole catalog and filtering client-side.
+ */
+export const favoritesQuerySchema = zod.object({
+  ids: zod
+    .string()
+    .min(1, "At least one id is required")
+    .transform((raw) =>
+      raw
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0)
+    )
+    .pipe(zod.array(zod.string().uuid("Each id must be a valid UUID")).min(1).max(100)),
+});
+
+export type FavoritesQueryDto = zod.infer<typeof favoritesQuerySchema>;

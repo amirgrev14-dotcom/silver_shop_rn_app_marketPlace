@@ -64,6 +64,14 @@ export class ProductService {
     return toProductJson(product);
   }
 
+  /** Batch lookup for saved items: only listable (ACTIVE/SOLD) products. */
+  async favorites(ids: string[]) {
+    const items = await prisma.product.findMany({
+      where: { id: { in: ids }, status: { in: ["ACTIVE", "SOLD"] } },
+    });
+    return items.map(toProductJson);
+  }
+
   /** Owner-only (SUPER_ADMIN bypasses). Returns void or throws. */
   async assertOwnership(id: string, userId: string, isSuperAdmin: boolean) {
     const product = await prisma.product.findUnique({ where: { id } });

@@ -6,7 +6,35 @@ import type { ImageSourcePropType } from "react-native";
  * Product feed comes from the real API. Promos hidden until added.
  */
 
-export function formatPrice(amount: number): string {
+import { DEFAULT_CURRENCY } from './currency';
+
+const priceFormatters = new Map<string, Intl.NumberFormat | null>();
+
+function formatterFor(currency: string): Intl.NumberFormat | null {
+  if (!priceFormatters.has(currency)) {
+    try {
+      // Dinar-family currencies read badly with forced decimals
+      // ("JOD 1.000" looks like a thousand), so: no decimals by default.
+      const noForcedDecimals = currency === "JOD";
+      priceFormatters.set(
+        currency,
+        new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency,
+          minimumFractionDigits: noForcedDecimals ? 0 : 2,
+          maximumFractionDigits: noForcedDecimals ? 3 : 2,
+        })
+      );
+    } catch {
+      priceFormatters.set(currency, null);
+    }
+  }
+  return priceFormatters.get(currency) ?? null;
+}
+
+export function formatPrice(amount: number, currency: string = DEFAULT_CURRENCY): string {
+  const formatter = formatterFor(currency);
+  if (formatter) return formatter.format(amount);
   return `$${amount.toFixed(2)}`;
 }
 

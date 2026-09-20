@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Bell, Heart, Search, ShoppingCart, SlidersHorizontal } from "lucide-react-native";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
 
+import { AppButton } from "@/components/ui/app-button";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AppInput } from "@/components/ui/app-input";
 import { CategoryCircle } from "@/components/ui/category-circle";
@@ -24,32 +25,36 @@ import type { Product } from "@/features/products/types";
 interface HomeTabProps {
   onSeeAllCategories?: () => void;
   onCategoryPress?: (categoryName: string) => void;
+  onShowSaved?: () => void;
   favorites: Set<string>;
-  onToggleFavorite: (id: string) => void;
+  onToggleFavorite: (product: Product) => void;
   onProductPress: (product: Product) => void;
 }
 
 export function HomeTab({
   onSeeAllCategories,
   onCategoryPress,
+  onShowSaved,
   favorites,
   onToggleFavorite,
   onProductPress,
 }: HomeTabProps): React.JSX.Element {
   const [query, setQuery] = useState("");
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
-  // Real backend feed (ACTIVE products). Replaces the old mock list.
-  const feedQuery = useQuery({
+  // Real backend feed, 20 items per page — never the whole catalog at once.
+  const feedQuery = useInfiniteQuery({
     queryKey: ["products", "feed"],
-    queryFn: () => fetchFeed({ limit: 20 }),
+    queryFn: ({ pageParam }) => fetchFeed({ limit: 20, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.pages ? lastPage.page + 1 : undefined,
   });
-  const feed = feedQuery.data?.items ?? [];
+  const feed = feedQuery.data?.pages.flatMap((page) => page.items) ?? [];
+  const totalCount = feedQuery.data?.pages[0]?.total ?? 0;
+  const remainingCount = Math.max(0, totalCount - feed.length);
 
-  const products = feed.filter(
-    (p) =>
-      p.title.toLowerCase().includes(query.trim().toLowerCase()) &&
-      (!favoritesOnly || favorites.has(p.id)),
+  const products = feed.filter((p) =>
+    p.title.toLowerCase().includes(query.trim().toLowerCase()),
   );
 
   return (
@@ -57,19 +62,27 @@ export function HomeTab({
       contentContainerClassName="gap-5 px-3 pb-6 pt-4"
       showsVerticalScrollIndicator={false}
       className="bg-[#F8F8FB]"
+      refreshControl={
+        <RefreshControl
+          refreshing={feedQuery.isRefetching && !feedQuery.isFetchingNextPage}
+          onRefresh={() => feedQuery.refetch()}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
     >
       {/* Header: Sliver + favorites + cart + bell */}
       <ScreenHeader
         title="Sliver"
         titleAlign="left"
+        accentFirstLetter
         titleClassName="text-2xl tracking-tight"
         right={
           <View className="flex-row gap-2">
             <CircleIconButton
               icon={Heart}
-              accessibilityLabel="Show favorites"
-              iconColor={favoritesOnly ? "primary" : "secondary"}
-              onPress={() => setFavoritesOnly((v) => !v)}
+              accessibilityLabel="Saved items"
+              onPress={onShowSaved}
             />
             <CircleIconButton icon={ShoppingCart} accessibilityLabel="Cart" />
             <CircleIconButton icon={Bell} accessibilityLabel="Notifications" />
@@ -134,38 +147,41 @@ export function HomeTab({
             description="Check your connection and pull to try again later."
           />
         ) : products.length > 0 ? (
-          <View className="flex-row flex-wrap gap-3">
-            {products.map((product) => (
-              <View key={product.id} className="flex-1" style={{ minWidth: "47%" }}>
-                <ProductCard
-                  className="w-full"
-                  imageClassName="h-44"
-                  imageSource={{ uri: product.images[0] ?? "" }}
-                  title={product.title}
-                  subtitle={product.categories[0] ?? ""}
-                  price={formatPrice(product.price)}
-                  isFavorite={favorites.has(product.id)}
-                  onPress={() => onProductPress(product)}
-                  onFavoritePress={() => onToggleFavorite(product.id)}
-                />
-              </View>
-            ))}
+          <View className="gap-3">
+            <View className="flex-row flex-wrap gap-3">
+              {products.map((product) => (
+                <View key={product.id} className="flex-1" style={{ minWidth: "47%" }}>
+                  <ProductCard
+                    className="w-full"
+                    imageClassName="h-44"
+                    imageSource={{ uri: product.images[0] ?? "" }}
+                    title={product.title}
+                    subtitle={product.categories[0] ?? ""}
+                    price={formatPrice(product.price, product.currency)}
+                    isFavorite={favorites.has(product.id)}
+                    onPress={() => onProductPress(product)}
+                    onFavoritePress={() => onToggleFavorite(product)}
+                  />
+                </View>
+              ))}
+            </View>
+            {feedQuery.hasNextPage ? (
+              <AppButton
+                variant="secondary"
+                loading={feedQuery.isFetchingNextPage}
+                onPress={() => feedQuery.fetchNextPage()}
+              >
+                {`Load more${remainingCount > 0 ? ` (${remainingCount} left)` : ""}`}
+              </AppButton>
+            ) : null}
           </View>
         ) : (
           <EmptyStateCard
-            title={
-              query.trim()
-                ? "No items match your search"
-                : favoritesOnly
-                  ? "No favorites yet"
-                  : "No popular items yet"
-            }
+            title={query.trim() ? "No items match your search" : "No popular items yet"}
             description={
               query.trim()
                 ? "Try a different search term."
-                : favoritesOnly
-                  ? "Tap the heart on pieces you like to save them here."
-                  : "Popular silver pieces from sellers will appear here."
+                : "Popular silver pieces from sellers will appear here."
             }
           />
         )}

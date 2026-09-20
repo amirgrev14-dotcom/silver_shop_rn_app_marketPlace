@@ -5,6 +5,7 @@ import {FlatList, Modal, Pressable, View, useWindowDimensions, type ImageSourceP
 
 import { AppText } from "@/components/ui/app-text";
 import { CircleIconButton } from "./circle-icon-button";
+import { LoadingImage } from "./loading-image";
 
 interface PhotoViewerProps {
   visible: boolean;
@@ -64,7 +65,7 @@ export function PhotoViewer({ visible, images, initialIndex = 0, onClose }: Phot
           onMomentumScrollEnd={handleScrollEnd}
           renderItem={({ item }) => (
             <View style={{ width: screenWidth }} className="flex-1 items-center justify-center px-4">
-              <Image
+              <LoadingImage
                 source={item}
                 style={{ width: screenWidth - 32, height: screenWidth - 32, borderRadius: 20 }}
                 contentFit="contain"

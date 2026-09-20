@@ -15,8 +15,10 @@ import { CircleIconButton } from "@/components/ui/circle-icon-button";
 import { EdgeFade } from "@/components/ui/edge-fade";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { BETA_SELL_CATEGORY_NAMES } from "@/features/marketplace/beta-categories";
+import { CURRENCIES, DEFAULT_CURRENCY } from "@/features/marketplace/currency";
+import { formatPriceInput, parsePriceInput, sanitizePriceInput, stripPriceInput } from "@/features/products/lib/price";
 import { createProduct, publishProduct } from "@/features/products/services/products-service";
-import { sellFormSchema, type SellFormData } from "@/features/products/schemas/product.schema";
+import { sellFormSchema, type SellFormInput } from "@/features/products/schemas/product.schema";
 import { showToast } from "@/stores/toast-store";
 
 const MAX_PHOTOS = 6;
@@ -30,7 +32,7 @@ export function SellTab(): React.JSX.Element {
     watch,
     reset,
     formState: { errors },
-  } = useForm<SellFormData>({
+  } = useForm<SellFormInput>({
     resolver: zodResolver(sellFormSchema),
 
     defaultValues: {
@@ -39,6 +41,7 @@ export function SellTab(): React.JSX.Element {
       category: "",
       price: "",
       description: "",
+      currency: DEFAULT_CURRENCY,
     },
   });
 
@@ -91,9 +94,10 @@ export function SellTab(): React.JSX.Element {
     );
   };
 
-  const onSubmit = async (data: SellFormData) => {
+  const onSubmit = async (data: SellFormInput) => {
     if (isPublishing) return;
-    const amount = Number(data.price.replace(",", "."));
+    const amount = parsePriceInput(data.price);
+    if (amount === null) return; // zod already flags this case
     setIsPublishing(true);
     try {
       // Real backend call: uploads photos, maps the category, creates
@@ -102,6 +106,7 @@ export function SellTab(): React.JSX.Element {
       const created = await createProduct({
         title: data.title,
         price: amount,
+        currency: data.currency ?? DEFAULT_CURRENCY,
         description: data.description.trim() || undefined,
         images: data.photos,
         categories: [data.category],
@@ -124,6 +129,7 @@ export function SellTab(): React.JSX.Element {
       <ScreenHeader
         title="Sell an Item"
         titleAlign="left"
+        accentFirstLetter
         className="bg-surface px-5 pb-3 pt-4"
         left={<CircleIconButton icon={X} accessibilityLabel="Close" />}
       />
@@ -221,15 +227,67 @@ export function SellTab(): React.JSX.Element {
           render={({ field: { onChange, onBlur, value } }) => (
             <AppInput
               value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              label="Price"
+              onBlur={() => {
+                // Leaving the field → pretty grouped format right in the input.
+                const amount = parsePriceInput(value);
+                if (amount !== null) {
+                  onChange(formatPriceInput(amount));
+                }
+                onBlur();
+              }}
+              onFocus={() => {
+                // Entering the field → raw digits for easy editing.
+                const stripped = stripPriceInput(value);
+                if (stripped !== value) onChange(stripped);
+              }}
+                  onChangeText={(t) => onChange(sanitizePriceInput(t))}
+                  label="Price"
               placeholder="$ 0.00"
               keyboardType="decimal-pad"
               error={errors.price?.message}
             />
           )}
         />
+
+        {/* Currency — under the amount */}
+        <Controller
+          control={control}
+          name="currency"
+          render={({ field: { onChange, value: currency } }) => (
+            <View className="gap-2">
+              <AppText className="text-sm font-medium text-text-primary">Currency</AppText>
+              <View className="flex-row flex-wrap gap-2">
+                {CURRENCIES.map((c) => {
+                  const isActive = currency === c.code;
+                  return (
+                    <Pressable
+                      key={c.code}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: isActive }}
+                      onPress={() => onChange(c.code)}
+                      className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-2 active:opacity-70 ${
+                        isActive ? "border-primary bg-primary-light" : "border-border bg-surface"
+                      }`}
+                    >
+                      <AppText
+                        className={`text-sm font-bold ${isActive ? "text-primary" : "text-text-secondary"}`}
+                      >
+                        {c.symbol}
+                      </AppText>
+                      <AppText
+                        className={`text-sm font-semibold ${isActive ? "text-primary" : "text-text-secondary"}`}
+                      >
+                        {c.code}
+                      </AppText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+        />
+
+        <PricePreview price={watch("price")} currency={watch("currency") ?? DEFAULT_CURRENCY} />
 
         {/* Description */}
         <View className="gap-2">
@@ -287,6 +345,25 @@ export function SellTab(): React.JSX.Element {
           </View>
         </Pressable>
       </Modal>
+    </View>
+  );
+}
+
+/** White total card: dark amount, currency as a small purple pill. */
+function PricePreview({ price, currency }: { price: string; currency: string }): React.JSX.Element | null {
+  const amount = parsePriceInput(price);
+  if (amount === null) return null;
+  return (
+    <View className="flex-row items-center justify-between rounded-[14px] border border-border bg-white px-4 py-3.5">
+      <AppText className="text-sm font-semibold text-text-primary">Total</AppText>
+      <View className="flex-row items-center gap-2">
+        <AppText className="text-lg font-bold text-text-primary">
+          {formatPriceInput(amount)}
+        </AppText>
+        <View className="rounded-full bg-primary-light px-2.5 py-1">
+          <AppText className="text-xs font-bold text-primary">{currency}</AppText>
+        </View>
+      </View>
     </View>
   );
 }

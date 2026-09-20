@@ -1,7 +1,7 @@
 import {ScrollView} from "react-native";
 
-import { AppText } from "@/components/ui/app-text";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
+import { ScreenHeader } from "@/components/ui/screen-header";
 
 export function MessagesTab(): React.JSX.Element {
   return (
@@ -9,9 +9,7 @@ export function MessagesTab(): React.JSX.Element {
       contentContainerClassName="gap-4 px-5 pb-6 pt-6"
       showsVerticalScrollIndicator={false}
     >
-      <AppText className="text-2xl font-bold tracking-tight text-text-primary">
-        Messages
-      </AppText>
+      <ScreenHeader title="Messages" titleAlign="left" accentFirstLetter />
 
       <EmptyStateCard
         title="No conversations yet"

@@ -3,6 +3,7 @@ import {Pressable, ScrollView, View} from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
+import { ScreenHeader } from "@/components/ui/screen-header";
 import { useAppStore } from "@/stores/app-store";
 
 const SELLER_STAGES = ["New", "In progress", "Completed"] as const;
@@ -25,9 +26,11 @@ export function OrdersTab(): React.JSX.Element {
       contentContainerClassName="gap-4 px-5 pb-6 pt-6"
       showsVerticalScrollIndicator={false}
     >
-      <AppText className="text-2xl font-bold tracking-tight text-text-primary">
-        {isSeller ? "Orders to fulfil" : "My orders"}
-      </AppText>
+      <ScreenHeader
+        title={isSeller ? "Orders to fulfil" : "My orders"}
+        titleAlign="left"
+        accentFirstLetter
+      />
 
       <View className="flex-row gap-2">
         {stages.map((name) => {

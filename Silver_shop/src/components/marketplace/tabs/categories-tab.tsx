@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { ArrowLeft, ChevronRight, ShoppingCart } from "lucide-react-native";
-import {Pressable, ScrollView, View} from "react-native";
+import {ActivityIndicator, Pressable, ScrollView, View} from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
 import { AppIcon } from "@/components/ui/app-icon";
@@ -8,7 +8,7 @@ import { CircleIconButton } from "@/components/ui/circle-icon-button";
 import { EdgeFade } from "@/components/ui/edge-fade";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { shadows } from "@/components/ui/theme";
+import { colors, shadows } from "@/components/ui/theme";
 import { BETA_CATEGORIES } from "@/features/marketplace/beta-categories";
 import {
   countForUiCategory,
@@ -23,10 +23,11 @@ export function CategoriesTab({
   onCategoryPress?: (categoryName: string) => void;
 }): React.JSX.Element {
   // Live totals per backend category; empty UI tiles are hidden.
+  // Nothing renders until counts arrive — no flash of unfiltered cards.
   const countsQuery = useCategoryCounts(BETA_CATEGORIES.map((c) => c.name));
   const visibleCategories = BETA_CATEGORIES.filter((c) => {
     const count = countForUiCategory(countsQuery.data, c.name);
-    // While loading (or on error) show everything; hide only known empties.
+    // On error (null data) show everything; hide only known empties.
     return count === null || count > 0;
   });
 
@@ -35,6 +36,8 @@ export function CategoriesTab({
       {/* Header: back + title + cart */}
       <ScreenHeader
         title="Categories"
+        titleAlign="left"
+        accentFirstLetter
         className="bg-surface px-5 pb-3 pt-4"
         left={<CircleIconButton icon={ArrowLeft} accessibilityLabel="Go back" onPress={onBack} tone="accent" />}
         right={<CircleIconButton icon={ShoppingCart} accessibilityLabel="Cart" />}
@@ -45,7 +48,11 @@ export function CategoriesTab({
         contentContainerClassName="gap-4 px-5 pb-6"
         showsVerticalScrollIndicator={false}
       >
-        {visibleCategories.length > 0 ? (
+        {countsQuery.isPending ? (
+          <View className="items-center py-8">
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : visibleCategories.length > 0 ? (
         <View className="flex-row flex-wrap gap-3.5">
           {visibleCategories.map((category) => (
             <Pressable

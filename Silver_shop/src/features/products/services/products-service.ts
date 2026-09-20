@@ -102,3 +102,29 @@ export async function fetchFeed(params?: {
     throw new Error(toApiMessage(error, 'Feed failed'));
   }
 }
+
+/**
+ * Saved-items lookup: fetches only the given ids (indexed DB query),
+ * ordered as requested. No catalog paging involved — scales to any
+ * catalog size. Unknown/removed ids are silently skipped by the API.
+ */
+export async function fetchFavoriteProducts(ids: string[]): Promise<Product[]> {
+  if (ids.length === 0) return [];
+  try {
+    const response = await httpClient.get(products('/products/favorites'), {
+      params: { ids: ids.join(',') },
+    });
+
+    if (response.data?.success === false) {
+      throw new Error(response.data.message || 'Favorites failed');
+    }
+
+    const items = (response.data.data?.items ?? []) as Product[];
+    const order = new Map(ids.map((id, index) => [id, index]));
+    return items
+      .filter((p) => order.has(p.id))
+      .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  } catch (error) {
+    throw new Error(toApiMessage(error, 'Favorites failed'));
+  }
+}

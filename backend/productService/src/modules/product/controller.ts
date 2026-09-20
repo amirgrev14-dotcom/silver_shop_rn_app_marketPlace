@@ -4,6 +4,7 @@ import { tokenUser } from "../../middleware/auth.middleware.js";
 import { ProductService } from "./service.js";
 import {
   createProductSchema,
+  favoritesQuerySchema,
   productQuerySchema,
   updateProductSchema,
 } from "./schema.js";
@@ -32,6 +33,12 @@ export class ProductController {
     const { id } = request.params as { id: string };
     const product = await this.productService.getById(id);
     return reply.send({ success: true, data: product });
+  };
+
+  favorites = async (request: FastifyRequest, reply: FastifyReply) => {
+    const { ids } = validate(favoritesQuerySchema, request.query);
+    const items = await this.productService.favorites(ids);
+    return reply.send({ success: true, data: { items, total: items.length } });
   };
 
   update = async (request: FastifyRequest, reply: FastifyReply) => {

@@ -4,7 +4,7 @@ import cors from "@fastify/cors";
 import { fastifyJwt } from "@fastify/jwt";
 
 import { cartRoutes } from "./modules/cart/routes.js";
-import { orderRoutes } from "./modules/orders/routes.js";
+import { orderRoutes } from "./modules/order/routes.js";
 
 const app = fastify({ logger: true });
 

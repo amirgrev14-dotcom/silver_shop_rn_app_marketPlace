@@ -1,5 +1,6 @@
 import { ArrowLeft, Heart } from "lucide-react-native";
 import { Pressable, ScrollView, View } from "react-native";
+import { useEffect } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppButton } from "@/components/ui/app-button";
@@ -8,6 +9,7 @@ import { CircleIconButton } from "@/components/ui/circle-icon-button";
 import { EdgeFade } from "@/components/ui/edge-fade";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { formatPrice } from "@/features/marketplace/mock-data";
+import { fetchFavoriteProducts } from "@/features/products/services/products-service";
 import { useCartStore } from "../store/cart-store";
 import { getEstimatedShipping, getItemsGroupedBySeller, getSubtotal, getTotalItems } from "../utils/cart-utils";
 import { CartSellerGroup } from "./CartSellerGroup";
@@ -37,6 +39,29 @@ export function CartFullModalBody({ onClose, onCheckout, onContinueShopping, onS
   const increase = useCartStore((s) => s.increaseQuantity);
   const decrease = useCartStore((s) => s.decreaseQuantity);
   const remove = useCartStore((s) => s.removeItem);
+  const setItems = useCartStore((s) => s.setItems);
+  // Drop stale lines (deleted / sold-out / archived products) from the
+  // local cart so cards never linger once the seller removed the item.
+  useEffect(() => {
+    const ids = items.map((i) => i.productId);
+    if (ids.length === 0) return;
+    let cancelled = false;
+    fetchFavoriteProducts(ids)
+      .then((fresh) => {
+        if (cancelled) return;
+        const alive = new Set(fresh.map((p) => p.id));
+        const kept = useCartStore.getState().items.filter((i) => alive.has(i.productId));
+        if (kept.length !== useCartStore.getState().items.length) {
+          setItems(kept);
+          void useCartStore.getState().flushSync();
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // Fresh server snapshot wins; line-level stock (saved at add time) is the fallback.
   const capById = new Map<string, number>();
   for (const line of items) {

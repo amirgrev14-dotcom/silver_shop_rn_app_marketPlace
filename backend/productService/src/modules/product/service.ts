@@ -65,10 +65,11 @@ export class ProductService {
     return toProductJson(product);
   }
 
-  /** Batch lookup for saved items: only listable (ACTIVE/SOLD) products. */
+  /** Batch lookup for saved items: only currently-listed (ACTIVE) products.
+   *  Sold-out / archived / deleted products drop out of favorites. */
   async favorites(ids: string[]) {
     const items = await prisma.product.findMany({
-      where: { id: { in: ids }, status: { in: ["ACTIVE", "SOLD"] } },
+      where: { id: { in: ids }, status: "ACTIVE" },
     });
     return items.map(toProductJson);
   }
@@ -112,11 +113,22 @@ export class ProductService {
       },
     });
 
+    // Product no longer purchasable -> remove from every cart.
+    if (derivedStatus === "SOLD" || derivedStatus === "ARCHIVED" || product.status !== "ACTIVE") {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "CartItem" WHERE "productId" = '${id}'`
+      );
+    }
+
     return toProductJson(product);
   }
 
   async remove(id: string) {
     await prisma.product.delete({ where: { id } });
+    // Product gone -> remove from every cart.
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM "CartItem" WHERE "productId" = '${id}'`
+    );
     return { message: "Product deleted" };
   }
 }

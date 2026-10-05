@@ -1,10 +1,10 @@
 import "dotenv/config";
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: "../.env" });
-process.env.DATABASE_URL = "postgresql://silver_shop_user:SILVER@localhost:5433/silver_shop_auth?schema=public";
+process.env.DATABASE_URL = "postgresql://neondb_owner:npg_BD1G8FsoYIXu@ep-orange-poetry-b2lfjcks-pooler.c-6.eu-central-1.aws.neon.tech/neondb?sslmode=requirepostgresql://silver_shop_user:SILVER@localhost:5433/silver_shop_auth?schema=publicchannel_binding=require";
 const { prisma } = await import("./src/lib/prisma.js");
 
-const USER_ID = "d7f85147-2711-4327-b71d-9b8a66bf494a";
+const USER_ID = "188ba093-9033-4920-86bf-92795d594587";
 
 await prisma.$executeRawUnsafe(
   `UPDATE "User" SET status='ACTIVE', "emailVerifiedAt"=NOW(), "updatedAt"=NOW() WHERE id='${USER_ID}'`
@@ -54,7 +54,7 @@ const items: Array<[string, number, string[], string, number]> = [
   ["Silver Bracelet with Charms", 55.0, ["Jewelry", "Bracelets", "Vintage"], "Vintage-style charm bracelet.", 3],
 ];
 
-for (let i = 0; i < items.length; i++) {
+for (let i = 0; i < 30; i++) {
   const [title, price, categories, description, stock] = items[i];
   await prisma.product.create({
     data: {

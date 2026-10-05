@@ -1,10 +1,9 @@
 const FALLBACK_API_URL = 'https://silver-shop-rn-app-marketplace.onrender.com/api';
-// Product service has no production host yet — local dev default.
-// On a physical phone replace with your LAN IP, e.g.
-// EXPO_PUBLIC_PRODUCTS_URL=http://192.168.1.10:3001/api
-const FALLBACK_PRODUCTS_URL = 'http://localhost:3001/api';
-// cartService (cart + orders) — same LAN rule as products.
-const FALLBACK_CART_URL = 'http://localhost:3002/api';
+// Both fallbacks point at the Render production hosts so the app works
+// out of the box. For local dev against your own backend, override with
+// EXPO_PUBLIC_PRODUCTS_URL / EXPO_PUBLIC_CART_URL (LAN IP on a phone).
+const FALLBACK_PRODUCTS_URL = 'https://silver-shop-rn-app-marketplace-9lk1.onrender.com/api';
+const FALLBACK_CART_URL = 'https://silver-shop-rn-app-marketplace-1.onrender.com/api';
 
 // EXPO_PUBLIC_* vars are inlined by Expo at runtime; the legacy names
 // are kept as a fallback for existing .env files.

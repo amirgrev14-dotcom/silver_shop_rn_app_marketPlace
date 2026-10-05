@@ -4,7 +4,7 @@ loadEnv({ path: "../.env" });
 process.env.DATABASE_URL = "postgresql://silver_shop_user:SILVER@localhost:5433/silver_shop_auth?schema=public";
 const { prisma } = await import("./src/lib/prisma.js");
 
-const USER_ID = "c14381b9-60b2-42ae-b520-ac3bb27b4833";
+const USER_ID = "d7f85147-2711-4327-b71d-9b8a66bf494a";
 
 await prisma.$executeRawUnsafe(
   `UPDATE "User" SET status='ACTIVE', "emailVerifiedAt"=NOW(), "updatedAt"=NOW() WHERE id='${USER_ID}'`

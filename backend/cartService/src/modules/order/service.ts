@@ -9,7 +9,14 @@ import type { CreateOrderDto } from "./schema.js";
  * require `status === "succeeded"` here instead.
  */
 async function verifyPayment(paymentId: string): Promise<void> {
-  if (paymentId.startsWith("mock_pi_")) return;
+  // Mock payments only when explicitly enabled (local/beta).
+  // Production (PAYMENT_PROVIDER=stripe) rejects mock ids outright.
+  if (paymentId.startsWith("mock_pi_")) {
+    if (process.env.PAYMENT_PROVIDER === "stripe") {
+      throw new AppError(HttpStatus.PAYMENT_REQUIRED, "Payment not verified");
+    }
+    return;
+  }
   throw new AppError(HttpStatus.PAYMENT_REQUIRED, "Payment not verified");
 }
 

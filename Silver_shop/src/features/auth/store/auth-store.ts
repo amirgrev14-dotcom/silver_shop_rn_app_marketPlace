@@ -17,10 +17,11 @@ type AuthState = {
   user: User | null;
 
   login: (accessToken: string, refreshToken: string, user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   setEmailVerified: (value?: boolean) => void;
+  setUser: (user: User) => void;
   refresh: () => Promise<{ accessToken: string; refreshToken: string }>;
-  restoreSession: () => void;
+  restoreSession: () => Promise<void>;
 };
 
 export const useAppStore = create<AuthState>((set, get) => ({
@@ -31,7 +32,7 @@ export const useAppStore = create<AuthState>((set, get) => ({
   user: null,
 
   login: (accessToken: string, refreshToken: string, user: User) => {
-    tokenStorage.setTokens(accessToken, refreshToken);
+    void tokenStorage.setTokens(accessToken, refreshToken).catch(() => {});
 
     set({
       isAuthenticated: true,
@@ -60,15 +61,30 @@ export const useAppStore = create<AuthState>((set, get) => ({
     });
   },
 
+  setUser: (user: User) => {
+    set({
+      user,
+      isVerifiedEmail: user.isVerifiedEmail ?? get().isVerifiedEmail,
+    });
+  },
+
   refresh: async () => {
     set({ refreshInProgress: true });
 
     try {
       const { accessToken, refreshToken: newRefreshToken } = await refreshTokenRequest();
 
-      get().login(accessToken, newRefreshToken, get().user!);
+      const currentUser = get().user;
+      if (currentUser) {
+        get().login(accessToken, newRefreshToken, currentUser);
+      } else {
+        await tokenStorage.setTokens(accessToken, newRefreshToken);
+      }
 
       return { accessToken, refreshToken: newRefreshToken };
+    } catch (error) {
+      await get().logout().catch(() => {});
+      throw error;
     } finally {
       set({ refreshInProgress: false });
     }
@@ -79,10 +95,14 @@ export const useAppStore = create<AuthState>((set, get) => ({
     const storedRefreshToken = await tokenStorage.getRefresh();
 
     if (accessToken && storedRefreshToken) {
-      const { user } = await getMe();
-      get().login(accessToken, storedRefreshToken, user);
+      try {
+        const { user } = await getMe();
+        get().login(accessToken, storedRefreshToken, user);
+      } catch {
+        await get().logout().catch(() => {});
+      }
     } else {
-      get().logout();
+      await get().logout().catch(() => {});
     }
   },
 }));

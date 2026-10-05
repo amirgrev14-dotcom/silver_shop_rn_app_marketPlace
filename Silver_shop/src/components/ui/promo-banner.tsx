@@ -24,7 +24,7 @@ export function PromoBanner({ promo, onPress }: PromoBannerProps): React.JSX.Ele
       <View className="flex-row items-center">
         {/* Copy side */}
         <View className="flex-1 gap-2 p-5">
-          <View className="self-start rounded-full bg-white/15 px-3 py-1">
+          <View className="self-start rounded-full bg-surface/15 px-3 py-1">
             <AppText className="text-[11px] font-bold uppercase tracking-[1px] text-white">
               {promo.badge}
             </AppText>
@@ -35,7 +35,7 @@ export function PromoBanner({ promo, onPress }: PromoBannerProps): React.JSX.Ele
           <AppText className="text-sm leading-5 text-white/70">
             {promo.subtitle}
           </AppText>
-          <View className="mt-2 self-start rounded-full bg-white px-5 py-2.5">
+          <View className="mt-2 self-start rounded-full bg-surface px-5 py-2.5">
             <AppText className="text-sm font-bold text-text-primary">
               {promo.ctaLabel}
             </AppText>
@@ -44,8 +44,8 @@ export function PromoBanner({ promo, onPress }: PromoBannerProps): React.JSX.Ele
 
         {/* Image side with decorative rings */}
         <View className="relative mr-4 h-[168px] w-[128px] items-center justify-center">
-          <View className="absolute h-[150px] w-[150px] rounded-full bg-white/10" />
-          <View className="absolute h-[118px] w-[118px] rounded-full bg-white/10" />
+          <View className="absolute h-[150px] w-[150px] rounded-full bg-surface/10" />
+          <View className="absolute h-[118px] w-[118px] rounded-full bg-surface/10" />
           <Image
             source={promo.image}
             style={{ width: 104, height: 140, borderRadius: 20 }}

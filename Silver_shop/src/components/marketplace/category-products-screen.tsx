@@ -47,7 +47,7 @@ export function CategoryProductsScreen({
   const remainingCount = Math.max(0, total - items.length);
 
   return (
-    <View className="flex-1 bg-[#F8F8FB]">
+    <View className="flex-1 bg-app">
       <ScreenHeader
         title={categoryName}
         titleAlign="left"
@@ -64,7 +64,7 @@ export function CategoryProductsScreen({
         refreshControl={
           <RefreshControl
             refreshing={feedQuery.isRefetching && !feedQuery.isFetchingNextPage}
-            onRefresh={() => feedQuery.refetch()}
+            onRefresh={() => void feedQuery.refetch()}
             colors={[colors.primary]}
             tintColor={colors.primary}
           />
@@ -78,10 +78,15 @@ export function CategoryProductsScreen({
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : feedQuery.isError ? (
-          <EmptyStateCard
-            title="Couldn't load items"
-            description="Check your connection and try again later."
-          />
+          <View className="gap-3">
+            <EmptyStateCard
+              title="Couldn't load items"
+              description="Check your connection and try again later."
+            />
+            <AppButton variant="secondary" onPress={() => void feedQuery.refetch()}>
+              Try again
+            </AppButton>
+          </View>
         ) : items.length > 0 ? (
           <View className="gap-3">
             <View className="flex-row flex-wrap gap-3">

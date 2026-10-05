@@ -2,10 +2,12 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Bell, Heart, Search, ShoppingCart, SlidersHorizontal } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
+import Animated, { ZoomIn } from "react-native-reanimated";
 
 import { AppButton } from "@/components/ui/app-button";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AppInput } from "@/components/ui/app-input";
+import { AppText } from "@/components/ui/app-text";
 import { CategoryCircle } from "@/components/ui/category-circle";
 import { CircleIconButton } from "@/components/ui/circle-icon-button";
 import { EmptyStateCard } from "@/components/ui/empty-state-card";
@@ -29,6 +31,8 @@ interface HomeTabProps {
   favorites: Set<string>;
   onToggleFavorite: (product: Product) => void;
   onProductPress: (product: Product) => void;
+  cartCount: number;
+  onCartPress?: () => void;
 }
 
 export function HomeTab({
@@ -38,6 +42,8 @@ export function HomeTab({
   favorites,
   onToggleFavorite,
   onProductPress,
+  cartCount,
+  onCartPress,
 }: HomeTabProps): React.JSX.Element {
   const [query, setQuery] = useState("");
 
@@ -61,11 +67,11 @@ export function HomeTab({
     <ScrollView
       contentContainerClassName="gap-5 px-3 pb-6 pt-4"
       showsVerticalScrollIndicator={false}
-      className="bg-[#F8F8FB]"
+      className="bg-app"
       refreshControl={
         <RefreshControl
           refreshing={feedQuery.isRefetching && !feedQuery.isFetchingNextPage}
-          onRefresh={() => feedQuery.refetch()}
+          onRefresh={() => void feedQuery.refetch()}
           colors={[colors.primary]}
           tintColor={colors.primary}
         />
@@ -84,7 +90,20 @@ export function HomeTab({
               accessibilityLabel="Saved items"
               onPress={onShowSaved}
             />
-            <CircleIconButton icon={ShoppingCart} accessibilityLabel="Cart" />
+            <View className="relative">
+              <CircleIconButton icon={ShoppingCart} accessibilityLabel="Cart" onPress={onCartPress} />
+              {cartCount > 0 ? (
+                <Animated.View
+                  key={cartCount}
+                  entering={ZoomIn.springify().damping(10).stiffness(500)}
+                  className="absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1"
+                >
+                  <AppText className="text-[11px] font-bold text-white">
+                    {cartCount > 99 ? "99+" : String(cartCount)}
+                  </AppText>
+                </Animated.View>
+              ) : null}
+            </View>
             <CircleIconButton icon={Bell} accessibilityLabel="Notifications" />
           </View>
         }
@@ -142,10 +161,15 @@ export function HomeTab({
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : feedQuery.isError ? (
-          <EmptyStateCard
-            title="Couldn't load items"
-            description="Check your connection and pull to try again later."
-          />
+          <View className="gap-3">
+            <EmptyStateCard
+              title="Couldn't load items"
+              description="Check your connection and pull to try again later."
+            />
+            <AppButton variant="secondary" onPress={() => void feedQuery.refetch()}>
+              Try again
+            </AppButton>
+          </View>
         ) : products.length > 0 ? (
           <View className="gap-3">
             <View className="flex-row flex-wrap gap-3">

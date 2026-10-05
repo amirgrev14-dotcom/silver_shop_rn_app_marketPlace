@@ -25,6 +25,10 @@ model Product {
   categories  String[]
   status      ProductStatus @default(DRAFT)
 
+  // Units available. Unique silver pieces default to 1;
+  // the seller sets the real quantity in the Sell form.
+  stock Int @default(1)
+
   // Snapshot for feed display without calling auth-service.
   // Source of truth lives in auth-service; refreshed on update.
   sellerId   String

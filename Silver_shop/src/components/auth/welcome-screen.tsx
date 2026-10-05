@@ -74,7 +74,7 @@ export function WelcomeScreen({
             </Text>
           </View>
 
-          <Text className="mt-3 text-xl leading-7 text-black font-semibold text-balance">
+          <Text className="mt-3 text-xl font-semibold leading-7 text-text-primary text-balance">
             Buy and sell silver items between people.
           </Text>
 
@@ -89,7 +89,7 @@ export function WelcomeScreen({
                   icon={feature.icon}
                   size={30}
                   color="primary"
-                  className="bg-[#e7e5eea8] p-3 rounded-md"
+                  className="rounded-[14px] bg-primary-light p-3"
                 />
 
                 <View className="flex-1">

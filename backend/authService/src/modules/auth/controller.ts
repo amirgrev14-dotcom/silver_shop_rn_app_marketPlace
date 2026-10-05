@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest} from "fastify"
-import  { type LoginDto, loginSchema, type RegisterDto, registerSchema } from "./schema.js";
+import  { type LoginDto, loginSchema, type RefreshDto, refreshSchema, type RegisterDto, registerSchema } from "./schema.js";
 import { validate } from "../../utils/validate.js";
 import { AuthService } from "./service.js";
 import { AppError, HttpStatus } from "../../common/AppError.js";
@@ -63,9 +63,19 @@ me = async (request: FastifyRequest, reply: FastifyReply) => {
   })
 }
 
-refresh = async (request: FastifyRequest, reply: FastifyReply) => {
+refresh = async (request: FastifyRequest<{Body: RefreshDto;}>, reply: FastifyReply) => {
 
-  const refreshToken = request.cookies.refreshToken
+  const body = validate(refreshSchema, request.body ?? {})
+
+  // Web sends the httpOnly cookie; native apps (no cookie jar) send the
+  // stored token in the body or as `Authorization: Bearer <refreshToken>`.
+  // The service verifies signature + `type: "refresh"`, so an access token
+  // can never pass here.
+  const header = request.headers.authorization;
+  const refreshToken =
+    request.cookies.refreshToken ??
+    body.refreshToken ??
+    (header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : undefined)
 
    if(!refreshToken) {
       throw new AppError(HttpStatus.UNAUTHORIZED, "Unauthorized")

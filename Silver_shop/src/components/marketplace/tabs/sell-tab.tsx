@@ -11,7 +11,6 @@ import { AppText } from "@/components/ui/app-text";
 import { AppButton } from "@/components/ui/app-button";
 import { AppIcon } from "@/components/ui/app-icon";
 import { AppInput } from "@/components/ui/app-input";
-import { CircleIconButton } from "@/components/ui/circle-icon-button";
 import { EdgeFade } from "@/components/ui/edge-fade";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { BETA_SELL_CATEGORY_NAMES } from "@/features/marketplace/beta-categories";
@@ -42,6 +41,7 @@ export function SellTab(): React.JSX.Element {
       price: "",
       description: "",
       currency: DEFAULT_CURRENCY,
+      stock: "1",
     },
   });
 
@@ -107,6 +107,7 @@ export function SellTab(): React.JSX.Element {
         title: data.title,
         price: amount,
         currency: data.currency ?? DEFAULT_CURRENCY,
+        stock: Number(data.stock.replace(/[^0-9]/g, "")),
         description: data.description.trim() || undefined,
         images: data.photos,
         categories: [data.category],
@@ -124,14 +125,13 @@ export function SellTab(): React.JSX.Element {
   };
 
   return (
-    <View className="flex-1 bg-[#F8F8FB]">
+    <View className="flex-1 bg-app">
       {/* Header */}
       <ScreenHeader
-        title="Sell an Item"
+        title="Sell Product"
         titleAlign="left"
         accentFirstLetter
         className="bg-surface px-5 pb-3 pt-4"
-        left={<CircleIconButton icon={X} accessibilityLabel="Close" />}
       />
 
       <View className="relative flex-1">
@@ -148,7 +148,7 @@ export function SellTab(): React.JSX.Element {
             {photos.map((uri) => (
               <View
                 key={uri}
-                className="h-[104px] w-[31%] overflow-hidden rounded-[14px] border border-border bg-white"
+                className="h-[104px] w-[31%] overflow-hidden rounded-[14px] border border-border bg-surface"
               >
                 <Image source={{ uri }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
                 <Pressable
@@ -168,7 +168,7 @@ export function SellTab(): React.JSX.Element {
                 accessibilityLabel={i === 0 && photos.length === 0 ? "Add first photo" : "Add photo"}
                 onPress={pickPhotos}
                 disabled={isPicking}
-                className="h-[104px] w-[31%] items-center justify-center rounded-[14px] border border-dashed border-border bg-white active:opacity-70"
+                className="h-[104px] w-[31%] items-center justify-center rounded-[14px] border border-dashed border-border bg-surface active:opacity-70"
               >
                 <AppIcon icon={Plus} size={26} color="muted" />
               </Pressable>
@@ -206,7 +206,7 @@ export function SellTab(): React.JSX.Element {
               <Pressable
                 accessibilityRole="button"
                 onPress={() => setCategoryOpen(true)}
-                className="h-[52px] flex-row items-center justify-between rounded-[14px] border border-border bg-white px-4 active:opacity-70"
+                className="h-[52px] flex-row items-center justify-between rounded-[14px] border border-border bg-surface px-4 active:opacity-70"
               >
                 <AppText className={`text-base ${value ? "text-text-primary" : "text-text-muted"}`}>
                   {value || "Select category"}
@@ -289,6 +289,23 @@ export function SellTab(): React.JSX.Element {
 
         <PricePreview price={watch("price")} currency={watch("currency") ?? DEFAULT_CURRENCY} />
 
+        {/* Quantity */}
+        <Controller
+          control={control}
+          name="stock"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <AppInput
+              value={value}
+              onBlur={onBlur}
+              onChangeText={(t) => onChange(t.replace(/[^0-9]/g, ""))}
+              label="Quantity"
+              placeholder="1"
+              keyboardType="number-pad"
+              error={errors.stock?.message}
+            />
+          )}
+        />
+
         {/* Description */}
         <View className="gap-2">
           <Controller
@@ -324,7 +341,7 @@ export function SellTab(): React.JSX.Element {
       {/* Category picker */}
       <Modal visible={categoryOpen} transparent animationType="fade" onRequestClose={() => setCategoryOpen(false)}>
         <Pressable className="flex-1 bg-black/40" onPress={() => setCategoryOpen(false)}>
-          <View className="mt-auto rounded-t-[24px] bg-white p-5 pb-8">
+          <View className="mt-auto rounded-t-[24px] bg-surface p-5 pb-8">
             <AppText className="mb-3 text-lg font-bold text-text-primary">Select category</AppText>
             {BETA_SELL_CATEGORY_NAMES.map((name) => (
               <Pressable
@@ -354,10 +371,10 @@ function PricePreview({ price, currency }: { price: string; currency: string }):
   const amount = parsePriceInput(price);
   if (amount === null) return null;
   return (
-    <View className="flex-row items-center justify-between rounded-[14px] border border-border bg-white px-4 py-3.5">
+    <View className="flex-row items-center justify-between rounded-[14px] border border-border bg-surface px-4 py-3.5">
       <AppText className="text-sm font-semibold text-text-primary">Total</AppText>
       <View className="flex-row items-center gap-2">
-        <AppText className="text-lg font-bold text-text-primary">
+        <AppText className="text-lg font-bold text-primary">
           {formatPriceInput(amount)}
         </AppText>
         <View className="rounded-full bg-primary-light px-2.5 py-1">

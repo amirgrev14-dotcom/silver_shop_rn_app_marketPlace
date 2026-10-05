@@ -28,6 +28,7 @@ const priceSchema = zod
 export const createProductSchema = zod.object({
   title: zod.string().min(3, "Title must be at least 3 characters").max(120),
   price: priceSchema,
+  stock: zod.number().int("Stock must be a whole number").min(0).max(9999).optional(),
   description: zod.string().max(2000).optional(),
   images: zod
     .array(zod.string().url("Each image must be a valid URL"))
@@ -43,8 +44,8 @@ export type CreateProductDto = zod.infer<typeof createProductSchema>;
 
 export const updateProductSchema = createProductSchema.partial().extend({
   // Publishing flow: seller moves DRAFT → ACTIVE, or archives.
-  // SOLD is reserved for the future orders flow.
-  status: zod.enum(["ACTIVE", "ARCHIVED"]).optional(),
+  // SOLD is set automatically when stock hits 0 (and cleared when restocked).
+  status: zod.enum(["ACTIVE", "ARCHIVED", "SOLD"]).optional(),
 });
 
 export type UpdateProductDto = zod.infer<typeof updateProductSchema>;

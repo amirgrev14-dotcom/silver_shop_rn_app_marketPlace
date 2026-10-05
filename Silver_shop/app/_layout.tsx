@@ -52,6 +52,7 @@ export default function RootLayout(): React.JSX.Element {
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="verify-email" options={{ headerShown: false }} />
+          <Stack.Screen name="checkout" options={{ headerShown: false, presentation: "card" }} />
           {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
         </Stack>
         <AppToast />

@@ -20,7 +20,7 @@ export function FavoriteButton({
       accessibilityRole="button"
       accessibilityLabel={isFavorite ? "Remove from favorites" : "Add to favorites"}
       onPress={onPress}
-      className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-70"
+      className="h-10 w-10 items-center justify-center rounded-full bg-surface active:opacity-70"
     >
       <AppIcon
         icon={Heart}

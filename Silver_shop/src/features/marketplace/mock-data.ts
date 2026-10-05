@@ -15,13 +15,14 @@ function formatterFor(currency: string): Intl.NumberFormat | null {
     try {
       // Dinar-family currencies read badly with forced decimals
       // ("JOD 1.000" looks like a thousand), so: no decimals by default.
+      // Whole amounts never show ".00" in any currency.
       const noForcedDecimals = currency === "JOD";
       priceFormatters.set(
         currency,
         new Intl.NumberFormat("en-US", {
           style: "currency",
           currency,
-          minimumFractionDigits: noForcedDecimals ? 0 : 2,
+          minimumFractionDigits: 0,
           maximumFractionDigits: noForcedDecimals ? 3 : 2,
         })
       );
@@ -34,7 +35,9 @@ function formatterFor(currency: string): Intl.NumberFormat | null {
 
 export function formatPrice(amount: number, currency: string = DEFAULT_CURRENCY): string {
   const formatter = formatterFor(currency);
-  if (formatter) return formatter.format(amount);
+  // Same Intl layout (symbol placement, decimals), but thousands are split
+  // by a space — "13,346.50" vs "13.346,50" ambiguity is gone.
+  if (formatter) return formatter.formatToParts(amount).map((p) => (p.type === "group" ? " " : p.value)).join("");
   return `$${amount.toFixed(2)}`;
 }
 

@@ -10,7 +10,8 @@ import {
   Store,
   type LucideIcon,
 } from "lucide-react-native";
-import {Pressable, ScrollView, View} from "react-native";
+import { useState } from "react";
+import {Pressable, RefreshControl, ScrollView, View} from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
 import { AppButton } from "@/components/ui/app-button";
@@ -19,6 +20,8 @@ import { AppIcon } from "@/components/ui/app-icon";
 import { CircleIconButton } from "@/components/ui/circle-icon-button";
 import { MenuRow } from "@/components/ui/menu-row";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { colors } from "@/components/ui/theme";
+import { getMe } from "@/features/auth/services/auth-service";
 import { MOCK_PROFILE } from "@/features/marketplace/mock-data";
 import type { MarketplaceMode } from "@/features/marketplace/types";
 import { useAppStore } from "@/stores/app-store";
@@ -43,6 +46,28 @@ export function ProfileTab({ onSavedPress }: { onSavedPress?: () => void }): Rea
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
   const logout = useAppStore((s) => s.logout);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Pull-to-refresh reloads the profile through httpClient, so the shared
+  // 401 → refresh → logout flow applies here too: a dead access token is
+  // silently refreshed, and a dead refresh token logs out to login.
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const { user: fresh } = await getMe();
+      useAppStore.getState().setUser({
+        id: fresh.id,
+        name: fresh.name,
+        email: fresh.email,
+        isVerifiedEmail: (fresh as { isVerifiedEmail?: boolean }).isVerifiedEmail ?? false,
+      });
+    } catch {
+      // Auth failures already trigger logout in the httpClient interceptor;
+      // other errors (offline) just end the spinner.
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const displayName = user?.name ?? MOCK_PROFILE.name;
   const initial = (displayName || "?").slice(0, 1).toUpperCase();
@@ -56,7 +81,15 @@ export function ProfileTab({ onSavedPress }: { onSavedPress?: () => void }): Rea
     <ScrollView
       contentContainerClassName="gap-5 px-5 pb-6 pt-4"
       showsVerticalScrollIndicator={false}
-      className="bg-[#F8F8FB]"
+      className="bg-app"
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => void onRefresh()}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
     >
       <ScreenHeader
         title="Profile"

@@ -13,6 +13,7 @@ import { LoadingImage } from "@/components/ui/loading-image";
 import { PhotoViewer } from "@/components/ui/photo-viewer";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { formatPrice } from "@/features/marketplace/mock-data";
+import { formatPriceInput } from "@/features/products/lib/price";
 import type { Product } from "@/features/products/types";
 
 const MAX_VISIBLE_THUMBS = 3;
@@ -22,6 +23,11 @@ interface ProductDetailScreenProps {
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onBack: () => void;
+  /** Units of this product already in the local cart. */
+  cartQty: number;
+  onAddToCart: () => void;
+  /** Tap on "In Cart" removes the line entirely (toggle). */
+  onRemoveFromCart: () => void;
 }
 
 export function ProductDetailScreen({
@@ -29,13 +35,14 @@ export function ProductDetailScreen({
   isFavorite,
   onToggleFavorite,
   onBack,
+  cartQty,
+  onAddToCart,
+  onRemoveFromCart,
 }: ProductDetailScreenProps): React.JSX.Element {
   const insets = useSafeAreaInsets();
   // Real API gallery — every photo cropped to square.
   const gallery = product.images.length > 0 ? product.images : [];
   const [activePhoto, setActivePhoto] = useState(0);
-  // UI-only cart state (no backend). Prepared for real cart logic later.
-  const [addedToCart, setAddedToCart] = useState(false);
   // Full-screen viewer page (null = closed). Remounts on open via `key`.
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
@@ -48,6 +55,20 @@ export function ProductDetailScreen({
   const mainSize = Math.min(screenWidth - 40, 260);
 
   const priceLabel = formatPrice(product.price, product.currency);
+  // More than 5 integer digits → the sum no longer fits beside the buttons:
+  // it moves to its own block, grouped by spaces ("1 234 567.89 USD"),
+  // allowed to wrap to two lines so the buttons are never squeezed.
+  const priceIntDigits = Math.trunc(Math.abs(product.price)).toString().length;
+  const longPrice = priceIntDigits > 5;
+  const barPriceLabel = longPrice
+    ? `${formatPriceInput(product.price)} ${product.currency}`
+    : priceLabel;
+  const inCart = cartQty > 0;
+  /** Toggle: add when absent, remove the whole line when present. */
+  const handleCartPress = () => {
+    if (inCart) onRemoveFromCart();
+    else onAddToCart();
+  };
 
   const handleShare = async () => {
     try {
@@ -61,7 +82,7 @@ export function ProductDetailScreen({
   };
 
   return (
-    <View className="flex-1 bg-[#F8F8FB]">
+    <View className="flex-1 bg-app">
       <ScreenHeader
         title="Product Detail"
         titleAlign="left"
@@ -190,9 +211,14 @@ export function ProductDetailScreen({
         </AppText>
 
         {/* Details */}
-        <View className="gap-3 rounded-[20px] border border-border bg-white p-5">
+        <View className="gap-3 rounded-[20px] border border-border bg-surface p-5">
           <AppText className="text-lg font-bold text-text-primary">Details</AppText>
           <DetailRow label="Category" value={product.categories[0] ?? "—"} />
+          <View className="h-px bg-border-light" />
+          <DetailRow
+            label="Availability"
+            value={product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+          />
           <View className="h-px bg-border-light" />
           <DetailRow label="Item ID" value={product.id.slice(0, 8)} />
         </View>
@@ -206,25 +232,22 @@ export function ProductDetailScreen({
         style={{ paddingBottom: insets.bottom + 12 }}
         className="border-t border-border bg-surface px-5 pt-3"
       >
-        {priceLabel.length > 10 ? (
+        {longPrice ? (
           <View className="gap-2.5">
             <AppText
-              numberOfLines={1}
-              ellipsizeMode="tail"
+              numberOfLines={2}
               className="text-xl font-bold text-text-primary"
             >
-              {priceLabel}
+              {barPriceLabel}
             </AppText>
-            <View className="flex-row gap-3">
+            <View className="flex-col gap-3">
               <AppButton
                 variant="secondary"
-                fullWidth={false}
-                className="flex-1"
-                onPress={() => setAddedToCart((v) => !v)}
+                onPress={handleCartPress}
               >
-                {addedToCart ? "In Cart ✓" : "Add to Cart"}
+                {inCart ? `In Cart (${cartQty}) ✓` : "Add to Cart"}
               </AppButton>
-              <AppButton fullWidth={false} className="flex-1">
+              <AppButton>
                 Buy Now
               </AppButton>
             </View>
@@ -242,9 +265,9 @@ export function ProductDetailScreen({
               variant="secondary"
               fullWidth={false}
               className="flex-1"
-              onPress={() => setAddedToCart((v) => !v)}
+              onPress={handleCartPress}
             >
-              {addedToCart ? "In Cart ✓" : "Add to Cart"}
+              {inCart ? `In Cart (${cartQty}) ✓` : "Add to Cart"}
             </AppButton>
             <AppButton fullWidth={false} className="flex-1">
               Buy Now

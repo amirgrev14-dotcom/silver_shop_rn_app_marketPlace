@@ -21,3 +21,13 @@ export const loginSchema = zod.object({
 
 export type LoginDto = zod.infer<typeof loginSchema>
 export type RegisterDto = zod.infer<typeof registerSchema>
+
+// Native clients (React Native) have no cookie jar, so they send the
+// stored refresh token explicitly. Web keeps using the httpOnly cookie.
+// All three sources are optional here — the controller rejects the request
+// when none of them carries a token.
+export const refreshSchema = zod.object({
+  refreshToken: zod.string().min(1).optional(),
+})
+
+export type RefreshDto = zod.infer<typeof refreshSchema>

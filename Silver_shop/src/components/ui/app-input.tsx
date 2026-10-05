@@ -1,4 +1,5 @@
 import { AppText } from "@/components/ui/app-text";
+import { colors } from "@/components/ui/theme";
 import { type ReactNode, useState } from 'react';
 import {
   TextInput,
@@ -53,7 +54,7 @@ export function AppInput({
             setIsFocused(true);
             onFocus?.(event);
           }}
-          placeholderTextColor="#A0A0AA"
+          placeholderTextColor={colors.textMuted}
           style={inputStyle}
           className="flex-1 text-base text-text-primary"
         />

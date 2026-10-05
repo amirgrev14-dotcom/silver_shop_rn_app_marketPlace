@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { ArrowLeft, ChevronRight, ShoppingCart } from "lucide-react-native";
-import {ActivityIndicator, Pressable, ScrollView, View} from "react-native";
+import {ActivityIndicator, Pressable, RefreshControl, ScrollView, View} from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
 import { AppIcon } from "@/components/ui/app-icon";
@@ -32,7 +32,7 @@ export function CategoriesTab({
   });
 
   return (
-    <View className="flex-1 bg-[#F8F8FB]">
+    <View className="flex-1 bg-app">
       {/* Header: back + title + cart */}
       <ScreenHeader
         title="Categories"
@@ -47,11 +47,24 @@ export function CategoriesTab({
       <ScrollView
         contentContainerClassName="gap-4 px-5 pb-6"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={countsQuery.isRefetching}
+            onRefresh={() => void countsQuery.refetch()}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
         {countsQuery.isPending ? (
           <View className="items-center py-8">
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
+        ) : countsQuery.isError ? (
+          <EmptyStateCard
+            title="Couldn't load categories"
+            description="Check your connection and pull to try again."
+          />
         ) : visibleCategories.length > 0 ? (
         <View className="flex-row flex-wrap gap-3.5">
           {visibleCategories.map((category) => (
@@ -63,7 +76,7 @@ export function CategoriesTab({
             >
               <View
                 style={shadows.card}
-                className="overflow-hidden rounded-[20px] border border-border bg-white"
+                className="overflow-hidden rounded-[20px] border border-border bg-surface"
               >
                 <View className="relative">
                   <Image
@@ -71,7 +84,7 @@ export function CategoriesTab({
                     style={{ width: "100%", height: 112 }}
                     contentFit="cover"
                   />
-                  <View className="absolute bottom-2 left-2 rounded-full bg-white/95 px-2.5 py-1">
+                  <View className="absolute bottom-2 left-2 rounded-full bg-surface/95 px-2.5 py-1">
                     <AppText className="text-[11px] font-bold text-text-primary">
                       {(() => {
                         const count = countForUiCategory(countsQuery.data, category.name);

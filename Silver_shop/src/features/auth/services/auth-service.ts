@@ -1,5 +1,6 @@
-import { isAxiosError } from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { httpClient } from '@/services/http-client';
+import { environment } from '@/config/environment';
 import type { AuthResponse, AuthUser, LoginFormValues, RegisterFormValues, VerifyEmailValues } from '@/features/auth/types';
 import { tokenStorage } from '@/lib/storage/token-storage';
 
@@ -136,7 +137,9 @@ export async function refreshToken(): Promise<{ accessToken: string; refreshToke
   }
 
   try {
-    const response = await httpClient.post('/auth/refresh', {}, { withCredentials: true });
+    // The stored token goes in the body: React Native has no cookie jar,
+    // so the backend cannot rely on the httpOnly cookie alone.
+    const response = await httpClient.post('/auth/refresh', { refreshToken: storedRefresh }, { withCredentials: true });
     const payload = unwrap<any>(response.data);
 
     const accessToken: string = payload.accessToken;
@@ -152,9 +155,24 @@ export async function refreshToken(): Promise<{ accessToken: string; refreshToke
 }
 
 export async function logout(): Promise<void> {
-  // Best-effort: call backend logout if reachable
+  // Best-effort: notify the backend with PLAIN axios (no interceptors).
+  // Using httpClient here would attach the (possibly dead) access token and,
+  // on 401, re-enter the refresh flow → infinite logout-refresh loop that
+  // hangs every pull-to-refresh spinner (Home / Categories / Profile).
   try {
-    await httpClient.post('/auth/logout');
+    const [accessToken, refreshToken] = await Promise.all([
+      tokenStorage.getAccess(),
+      tokenStorage.getRefresh(),
+    ]);
+    await axios.post(
+      `${environment.apiUrl}/auth/logout`,
+      { refreshToken: refreshToken ?? undefined },
+      {
+        withCredentials: true,
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        timeout: 10_000,
+      }
+    );
   } catch {
     // Ignore errors — local cleanup happens regardless
   }

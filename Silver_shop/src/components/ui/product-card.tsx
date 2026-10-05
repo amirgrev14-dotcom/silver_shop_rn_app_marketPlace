@@ -1,9 +1,11 @@
+import { memo } from "react";
 import {Pressable, View, type GestureResponderEvent, type ImageSourcePropType, } from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
 import { AppCard } from "./app-card";
 import { FavoriteButton } from "./favorite-button";
 import { LoadingImage } from "./loading-image";
+import { colors } from "./theme";
 
 interface ProductCardProps {
   imageSource: ImageSourcePropType;
@@ -19,7 +21,32 @@ interface ProductCardProps {
   layout?: "vertical" | "horizontal";
 }
 
-export function ProductCard({
+function sourceKey(source: ImageSourcePropType): string | number {
+  if (source === null || source === undefined) return "";
+  if (typeof source === "number") return source;
+  if (Array.isArray(source)) return source.length > 0 ? sourceKey(source[0]) : "";
+  return source.uri ?? "";
+}
+
+/**
+ * Custom compare: grids pass fresh inline closures and `{ uri }`
+ * objects every render — compare by value so only the tapped card
+ * re-renders when a heart toggles. The heart fills instantly.
+ */
+function arePropsEqual(prev: ProductCardProps, next: ProductCardProps): boolean {
+  return (
+    prev.title === next.title &&
+    prev.subtitle === next.subtitle &&
+    prev.price === next.price &&
+    prev.isFavorite === next.isFavorite &&
+    prev.className === next.className &&
+    prev.imageClassName === next.imageClassName &&
+    prev.layout === next.layout &&
+    sourceKey(prev.imageSource) === sourceKey(next.imageSource)
+  );
+}
+
+function ProductCardInner({
   imageSource,
   title,
   subtitle,
@@ -41,7 +68,7 @@ export function ProductCard({
       <Pressable
         accessibilityRole="button"
         onPress={onPress}
-        className={className ?? "w-full"}
+        className={`${className ?? "w-full"} active:opacity-75`}
       >
         <AppCard className="flex-row items-center gap-3 p-3">
           <View className="h-[104px] w-[104px] overflow-hidden rounded-[14px] bg-silver-light">
@@ -79,9 +106,9 @@ export function ProductCard({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      className={className ?? "w-[210px]"}
+      className={`${className ?? "w-[210px]"} active:opacity-75`}
     >
-      <AppCard className="py-0 px-0">
+      <AppCard variant="ghost" style={{ borderColor: colors.border }} className="py-0 px-0">
         <View className={`relative overflow-hidden rounded-t-[14px] bg-silver-light ${imageClassName}`}>
           <LoadingImage
             source={imageSource}
@@ -119,3 +146,5 @@ export function ProductCard({
     </Pressable>
   );
 }
+
+export const ProductCard = memo(ProductCardInner, arePropsEqual);

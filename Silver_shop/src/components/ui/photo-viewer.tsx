@@ -82,7 +82,7 @@ export function PhotoViewer({ visible, images, initialIndex = 0, onClose }: Phot
               accessibilityLabel={`Photo ${index + 1}`}
               onPress={() => goTo(index)}
               className={`h-12 w-12 overflow-hidden rounded-[10px] border-2 ${
-                index === activeIndex ? "border-white" : "border-transparent opacity-60"
+                index === activeIndex ? "border-surface" : "border-transparent opacity-60"
               }`}
             >
               <Image

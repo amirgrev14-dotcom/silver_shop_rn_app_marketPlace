@@ -1,5 +1,7 @@
 import { View } from "react-native";
 
+import { colors } from "./theme";
+
 interface EdgeFadeProps {
   /** Height of the fog strip. */
   height?: number;
@@ -15,7 +17,7 @@ const STEPS = 18;
  * instead of clipping with a hard edge. Pure views, no native deps.
  * Must sit after the ScrollView inside a relative parent; ignores touches.
  */
-export function EdgeFade({ height = 40, color = "#FFFFFF", className }: EdgeFadeProps): React.JSX.Element {
+export function EdgeFade({ height = 40, color = colors.surface, className }: EdgeFadeProps): React.JSX.Element {
   const stepHeight = height / STEPS;
   return (
     <View

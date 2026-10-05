@@ -45,7 +45,7 @@ app.register(authRoutes, {
 })
 
 app.register(emailVerificationRoutes, {
-  prefix: "api/auth/email-verification"
+  prefix: "/api/auth/email-verification"
 })
 
 app.get('/health',  (request, reply) => {

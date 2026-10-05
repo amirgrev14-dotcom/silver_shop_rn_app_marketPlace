@@ -17,6 +17,7 @@ export class ProductService {
       data: {
         title: data.title,
         price: data.price,
+        ...(data.stock !== undefined ? { stock: data.stock } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
         images: data.images,
         categories: [...data.categories],
@@ -86,15 +87,28 @@ export class ProductService {
   }
 
   async update(id: string, data: UpdateProductDto) {
+    // stock -> status derivation: zero stock means SOLD (unique piece sold out).
+    // If caller explicitly zeroes stock without setting status, we move to SOLD.
+    // If stock is restored from 0, SOLD flips back to ACTIVE unless caller set another status.
+    let derivedStatus = data.status;
+    if (data.stock !== undefined && derivedStatus === undefined) {
+      if (data.stock === 0) derivedStatus = "SOLD";
+      else {
+        const current = await prisma.product.findUnique({ where: { id }, select: { status: true } });
+        if (current?.status === "SOLD" && data.stock > 0) derivedStatus = "ACTIVE";
+      }
+    }
+
     const product = await prisma.product.update({
       where: { id },
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
         ...(data.price !== undefined ? { price: data.price } : {}),
+        ...(data.stock !== undefined ? { stock: data.stock } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
         ...(data.images !== undefined ? { images: data.images } : {}),
         ...(data.categories !== undefined ? { categories: [...data.categories] } : {}),
-        ...(data.status !== undefined ? { status: data.status } : {}),
+        ...(derivedStatus !== undefined ? { status: derivedStatus } : {}),
       },
     });
 

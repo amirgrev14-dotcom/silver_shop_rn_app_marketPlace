@@ -43,6 +43,15 @@ export const sellFormSchema = z.object({
     .max(500, 'Description must be at most 500 characters.'),
 
   currency: z.enum(CURRENCY_CODES).default(DEFAULT_CURRENCY),
+
+  stock: z
+    .string()
+    .trim()
+    .min(1, 'Enter the quantity available.')
+    .refine((value) => {
+      const amount = Number(value.replace(/[^0-9]/g, ''));
+      return Number.isInteger(amount) && amount >= 1 && amount <= 9999;
+    }, 'Quantity must be a whole number from 1 to 9999.'),
 });
 
 export type SellFormData = z.infer<typeof sellFormSchema>;

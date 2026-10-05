@@ -6,8 +6,11 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
 import { colors } from './theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type AppButtonVariant = 'primary' | 'secondary' | 'ghost';
 
@@ -48,13 +51,25 @@ export function AppButton({
 }: AppButtonProps): React.JSX.Element {
   const isDisabled = disabled || loading;
 
+  // Spring press animation (hover-like feedback) for all buttons.
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       disabled={isDisabled}
       onPress={onPress}
-      style={style}
-      className={`h-[52px] items-center justify-center rounded-[14px] px-5 ${
+      onPressIn={() => {
+        if (!isDisabled) scale.value = withSpring(0.96, { damping: 15, stiffness: 500 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 15, stiffness: 500 });
+      }}
+      style={[animatedStyle, style]}
+      className={`h-[52px] items-center justify-center rounded-[14px] px-5 active:opacity-85 ${
         fullWidth ? 'w-full' : 'self-start'
       } ${variantClasses[variant]} ${isDisabled ? 'opacity-50' : ''} ${className ?? ''}`}
     >
@@ -65,6 +80,6 @@ export function AppButton({
           {children}
         </AppText>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }

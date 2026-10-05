@@ -23,7 +23,7 @@ export function CategoryCircle({ image, label, onPress }: CategoryCircleProps): 
         style={shadows.card}
         className="rounded-full bg-primary-light p-[3px]"
       >
-        <View className="h-16 w-16 overflow-hidden rounded-full border-2 border-white bg-white">
+        <View className="h-16 w-16 overflow-hidden rounded-full border-2 border-surface bg-surface">
           <Image
             source={image}
             style={{ width: "100%", height: "100%" }}

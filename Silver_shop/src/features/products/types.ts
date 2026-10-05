@@ -15,6 +15,8 @@ export interface Product {
   price: number;
   /** ISO currency code. Optional until the backend stores it. */
   currency?: string;
+  /** Units available. Unique pieces default to 1. */
+  stock: number;
   description: string | null;
   images: string[];
   categories: string[];
@@ -30,6 +32,7 @@ export interface CreateProductValues {
   price: number;
   /** Sent along; backend ignores unknown keys until it supports currency. */
   currency?: string;
+  stock?: number;
   description?: string;
   images: string[];
   categories: string[];

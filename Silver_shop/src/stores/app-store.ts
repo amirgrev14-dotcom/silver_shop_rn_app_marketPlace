@@ -1,9 +1,7 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
 
 import { tokenStorage } from '@/lib/storage/token-storage';
 import { refreshToken, logout as logoutBackend, getMe } from '@/features/auth/services/auth-service';
-import { environment } from '@/config/environment';
 import type { MarketplaceMode } from '@/features/marketplace/types';
 
 type User = {
@@ -21,10 +19,11 @@ type AuthState = {
   user: User | null;
 
   login: (accessToken: string, refreshToken: string, user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   setEmailVerified: (value?: boolean) => void;
+  setUser: (user: User) => void;
   refresh: () => Promise<{ accessToken: string; refreshToken: string }>;
-  restoreSession: () => void;
+  restoreSession: () => Promise<void>;
 };
 
 type AppState = {
@@ -41,6 +40,7 @@ type AppState = {
   login: AuthState['login'];
   logout: AuthState['logout'];
   setEmailVerified: AuthState['setEmailVerified'];
+  setUser: (user: User) => void;
   refresh: AuthState['refresh'];
   restoreSession: AuthState['restoreSession'];
 };
@@ -60,12 +60,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   setMode: (mode) => set({ mode }),
 
   login: (accessToken: string, refreshToken: string, user: User) => {
-    tokenStorage.setTokens(accessToken, refreshToken);
+    // Fire-and-forget: zustand actions stay sync; SecureStore is the source
+    // of truth and every httpClient request reads it lazily.
+    void tokenStorage.setTokens(accessToken, refreshToken).catch(() => {});
     set({
       isAuthenticated: true,
       isVerifiedEmail: user.isVerifiedEmail ?? false,
       accessTokenExpiry: Date.now() + 15 * 60 * 1000,
       user,
+    });
+  },
+
+  setUser: (user: User) => {
+    set({
+      user,
+      isVerifiedEmail: user.isVerifiedEmail ?? get().isVerifiedEmail,
     });
   },
 
@@ -92,8 +101,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ refreshInProgress: true });
     try {
       const { accessToken, refreshToken: newRefreshToken } = await refreshToken();
-      get().login(accessToken, newRefreshToken, get().user!);
+      const currentUser = get().user;
+      if (currentUser) {
+        get().login(accessToken, newRefreshToken, currentUser);
+      } else {
+        // No user in memory (e.g. cold start) — persist the rotated pair;
+        // the next getMe()/restoreSession hydrates the user.
+        await tokenStorage.setTokens(accessToken, newRefreshToken);
+      }
       return { accessToken, refreshToken: newRefreshToken };
+    } catch (error) {
+      // Manual refresh with a dead refresh token → drop the session so
+      // pull-to-refresh lands on login instead of spinning forever.
+      await get().logout().catch(() => {});
+      throw error;
     } finally {
       set({ refreshInProgress: false });
     }
@@ -110,10 +131,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       } catch {
         // Backend unreachable or profile failed → drop the session
         // instead of crashing with an uncaught rejection.
-        get().logout();
+        // (Dead refresh token is already logged out by the interceptor;
+        // this covers the first-load path before any query runs.)
+        await get().logout().catch(() => {});
       }
     } else {
-      get().logout();
+      await get().logout().catch(() => {});
     }
   },
 }));

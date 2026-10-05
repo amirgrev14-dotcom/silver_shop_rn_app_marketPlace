@@ -9,7 +9,16 @@ import { tokenStorage } from '@/lib/storage/token-storage';
 function logoutStore() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { useAppStore } = require('@/stores/app-store') as typeof import('@/stores/app-store');
-  useAppStore.getState().logout();
+  // Fire-and-forget: interceptors can't await, and logout() itself must
+  // never trigger another refresh (it uses plain axios — see auth-service).
+  void useAppStore.getState().logout().catch(() => {});
+}
+
+function setAuthHeader(originalRequest: any, token: string) {
+  if (!originalRequest.headers) {
+    originalRequest.headers = {};
+  }
+  originalRequest.headers.Authorization = `Bearer ${token}`;
 }
 
 // Module-level guard to prevent concurrent refresh requests
@@ -73,15 +82,23 @@ httpClient.interceptors.response.use(
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // No point refreshing the session for auth endpoints themselves:
-      // a 401 here means bad credentials, not an expired access token.
+      // Never refresh the session for auth endpoints themselves:
+      // a 401 here means bad/expired credentials (login, refresh, logout,
+      // me), not an expired access token on a resource request.
+      // NOTE: /auth/logout and /auth/me MUST be excluded — otherwise a
+      // failed refresh → logout() → POST /auth/logout (401) → refresh…
+      // recurses into an infinite logout-refresh loop that hangs every
+      // pull-to-refresh spinner (Home / Categories / Profile).
       const url: string = originalRequest?.url ?? '';
-      const isAuthEndpoint =
-        url.includes('/auth/login') ||
-        url.includes('/auth/register') ||
-        url.includes('/auth/refresh');
+      const isAuthEndpoint = url.includes('/auth/');
 
       if (isAuthEndpoint) {
+        // Session is dead and there is nothing to refresh — drop it so
+        // pull-to-refresh anywhere lands on the login screen instead of
+        // spinning forever.
+        if (url.includes('/auth/me') || url.includes('/auth/logout')) {
+          logoutStore();
+        }
         return Promise.reject(error);
       }
 
@@ -93,7 +110,7 @@ httpClient.interceptors.response.use(
           failedQueue.push({
             onError: (err: any) => reject(err),
             onSuccess: (token: string) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+              setAuthHeader(originalRequest, token);
               resolve(httpClient(originalRequest));
             },
           });
@@ -114,17 +131,22 @@ httpClient.interceptors.response.use(
 
       try {
         // Plain axios (no interceptors) to avoid an infinite refresh loop.
-        // withCredentials: true sends the refreshToken cookie when the
-        // backend uses HTTP-only cookies.
+        // withCredentials: true sends the refreshToken cookie on web, but
+        // React Native has no cookie jar — so the stored token is also sent
+        // explicitly in the body (backend accepts cookie | body | Bearer).
         const response = await axios.post(
           `${environment.apiUrl}/auth/refresh`,
-          {},
+          { refreshToken },
           { withCredentials: true }
         );
 
         const payload = response.data?.data ?? response.data;
-        const newAccessToken: string = payload.accessToken;
-        const newRefreshToken: string | undefined = payload.refreshToken;
+        const newAccessToken: string | undefined = payload?.accessToken;
+        const newRefreshToken: string | undefined = payload?.refreshToken;
+
+        if (!newAccessToken) {
+          throw new Error('Refresh response missing access token');
+        }
 
         // Update SecureStore via the single source of truth
         if (newRefreshToken) {
@@ -141,7 +163,7 @@ httpClient.interceptors.response.use(
         processQueue(null, newAccessToken);
 
         // Retry the original request
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        setAuthHeader(originalRequest, newAccessToken);
         return httpClient(originalRequest);
       } catch (refreshError: any) {
         isRefreshing = false;

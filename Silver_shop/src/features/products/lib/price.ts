@@ -1,13 +1,5 @@
-const groupedFormatter = (() => {
-  try {
-    return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
-  } catch {
-    return null;
-  }
-})();
-
 /**
- * Parses user-typed prices in both styles:
+ * Parses user-typed prices in all styles:
  *  - US grouped: "13,346.50" or "13,346" (commas every 3 digits = thousands)
  *  - EU decimal: "13,5" (single comma = decimal point)
  * Grouped input from our own blur-formatting always parses back
@@ -50,10 +42,16 @@ export function parsePriceInput(value: string): number | null {
   return Number.isFinite(amount) && amount > 0 ? amount : null;
 }
 
-/** "13346.5" → "13,346.5" for display inside the input. */
+/** "13346.5" → "13 346.5": thousands split by a space, decimals after
+ *  a dot. No comma/dot ambiguity ("13,346" vs "13.346" confusion).
+ *  parsePriceInput() accepts this back, plus legacy comma styles. */
 export function formatPriceInput(amount: number): string {
-  if (groupedFormatter) return groupedFormatter.format(amount);
-  return String(amount);
+  if (!Number.isFinite(amount)) return String(amount);
+  const rounded = Math.round(amount * 100) / 100;
+  const [int, dec] = String(rounded).split(".");
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  if (dec === undefined || dec === "") return grouped;
+  return `${grouped}.${dec}`;
 }
 
 /** "13,346.5" → "13346.5" for editing on focus. */
